@@ -1,4 +1,4 @@
-
+A hybrid app to stimulate PSYCHOLOGICAL TESTS of ssb and provide ai based feedback highlighting strengths,weakness andofficer like qualities(OLQs).
 
 ## Run Locally
 
@@ -12,3 +12,4 @@
    `npm run dev`
 
 *** link for direct access ====>https://nox-ssb-prep.vercel.app/
+                               made by NAVEEN
