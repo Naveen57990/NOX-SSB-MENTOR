@@ -12,4 +12,5 @@ A hybrid app to stimulate PSYCHOLOGICAL TESTS of ssb and provide ai based feedba
    `npm run dev`
 
 *** link for direct access ====>https://nox-ssb-prep.vercel.app/
-                                                                                                                                                                                                                                                                                made by NAVEEN
+
+                                                                          made by NAVEEN
