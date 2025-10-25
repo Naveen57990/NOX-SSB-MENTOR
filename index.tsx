@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type, LiveServerMessage, Modality, Blob } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -21,7 +22,20 @@ const db = {
 };
 
 // --- DATA & CONFIG CONSTANTS ---
-const TAT_IMAGES_DEFAULT = ["https://images.unsplash.com/photo-1504221507732-5246c0db29e7?q=80&w=1920&auto=format&fit=crop", "https://images.unsplash.com/photo-1542856334-a1b635e48358?q=80&w=1920&auto=format&fit=crop"];
+const TAT_IMAGES_DEFAULT = [
+    "https://i.imgur.com/8os3v26.jpeg", // Boy looking out window
+    "https://i.imgur.com/m4L35vC.jpeg", // Man at desk
+    "https://i.imgur.com/T5a2F3s.jpeg", // Field scene with person down
+    "https://i.imgur.com/y3J3f7Y.jpeg", // Bedroom scene
+    "https://i.imgur.com/eYhPh2T.jpeg", // Lab/workshop scene
+    "https://i.imgur.com/O0B8a4l.jpeg", // Rock climbing
+    "https://i.imgur.com/Jd1mJtL.jpeg", // Group planning
+    "https://i.imgur.com/bW3qY0f.jpeg", // Formal couple
+    "https://i.imgur.com/wP0b6bB.jpeg", // Stormy sea
+    "https://i.imgur.com/c1g2g3H.jpeg", // Lone person in desert
+    "https://i.imgur.com/k9f7b1s.jpeg", // Rescue scene
+    "https://i.imgur.com/5J3e2eF.png"  // Blank card
+];
 const WAT_WORDS_DEFAULT = ['Duty', 'Courage', 'Team', 'Defeat', 'Lead', 'Responsibility', 'Friend', 'Failure', 'Order', 'Discipline'];
 const SRT_SCENARIOS_DEFAULT = ['You are on your way to an important exam and you see an accident. You are the first person to arrive. What would you do?', 'During a group task, your team members are not cooperating. What would you do?'];
 const LECTURERETTE_TOPICS_DEFAULT = ['My Favourite Hobby', 'The Importance of Discipline in Life', 'India in 2047', 'Artificial Intelligence: A Boon or a Bane?', 'My Role Model'];
@@ -790,7 +804,8 @@ const CaptainNox = ({ user, calculateOLQScores }) => {
     
     const generatePlan = () => {
         const olqScores = calculateOLQScores(user);
-        const weakestOlqs = Object.entries(olqScores).sort(([,a],[,b]) => a-b).slice(0, 3).map(([name]) => name);
+        // FIX: Cast `a` and `b` to number to resolve arithmetic operation error on unknown type.
+        const weakestOlqs = Object.entries(olqScores).sort(([,a],[,b]) => (a as number) - (b as number)).slice(0, 3).map(([name]) => name);
         const planPrompt = `Based on my performance data and my weakest OLQs (${weakestOlqs.join(', ')}), generate a personalized 7-day training plan for me. Suggest specific tests in the app and other offline activities.`;
         handleSendMessage(null, planPrompt);
     };
@@ -1278,15 +1293,18 @@ const OLQDashboard = ({ user, calculateOLQScores }) => {
     const olqScores = useMemo(() => calculateOLQScores(user), [user, calculateOLQScores]);
     
     const chartData = useMemo(() => {
-        const maxScore = Math.max(...Object.values(olqScores), 1); // Avoid division by zero
+        // FIX: Cast values from olqScores to number[] to use with Math.max, preventing errors with unknown[] type.
+        const maxScore = Math.max(...(Object.values(olqScores) as number[]), 1); // Avoid division by zero
         return OLQ_LIST.map(olq => ({
             label: olq.split(' ').map(s => s[0]).join(''),
-            value: ((olqScores[olq] || 0) / maxScore) * 100
+            // FIX: Cast property access on olqScores to number to resolve arithmetic operation error.
+            value: (((olqScores[olq] as number) || 0) / maxScore) * 100
         }));
     }, [olqScores]);
 
     const getInterpretation = async () => {
-        if (!Object.values(olqScores).some(v => v > 0)) return;
+        // FIX: Cast `v` to number to resolve comparison error on unknown type.
+        if (!Object.values(olqScores).some(v => (v as number) > 0)) return;
         setIsLoading(true);
         const prompt = `Given these aggregated Officer-Like Quality (OLQ) scores for an SSB aspirant: ${JSON.stringify(olqScores)}. Provide a brief, encouraging interpretation for each OLQ that has a score greater than zero. Also provide a summary of their overall officer potential based on this profile. Format the response as a simple text string.`;
         try {
