@@ -619,106 +619,39 @@
     }
     
     /* Feedback Modal */
-    .feedback-tabs {
-        display: flex;
-        gap: var(--spacing-sm);
-        border-bottom: 1px solid var(--primary-light);
-        margin-bottom: var(--spacing-lg);
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-lg);
     }
-    .feedback-tab {
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: none;
-        background: none;
-        color: var(--neutral-light);
-        cursor: pointer;
-        font-size: 1rem;
-        font-family: var(--font-body);
-        font-weight: 600;
-        border-bottom: 2px solid transparent;
-        transition: all 0.2s ease;
+    .modal-header h2 { margin-bottom: 0; }
+    .close-button {
+      background: none;
+      border: none;
+      font-size: 2.5rem;
+      color: var(--neutral-light);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
     }
-    .feedback-tab:hover {
-        color: var(--text-light);
+    .close-button:hover { color: var(--text-light); }
+    .feedback-modal ul { list-style-position: inside; padding-left: var(--spacing-sm); }
+    .feedback-modal li { margin-bottom: var(--spacing-sm); }
+    .feedback-modal h4 {
+      font-family: var(--font-display);
+      color: var(--accent-color);
+      margin-top: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      border-bottom: 1px solid var(--primary-light);
+      padding-bottom: var(--spacing-sm);
     }
-    .feedback-tab.active {
-        color: var(--accent-color);
-        border-bottom-color: var(--accent-color);
-    }
-    .feedback-tab-content {
-        animation: fadeIn 0.4s ease;
-    }
-    .overall-summary {
-        background-color: var(--primary-dark);
-        padding: var(--spacing-md);
-        border-radius: var(--border-radius);
-        margin-bottom: var(--spacing-lg);
-        border-left: 4px solid var(--accent-color);
-    }
-    .strengths-weaknesses-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: var(--spacing-lg);
-    }
-    .feedback-column h3 {
-        margin-bottom: var(--spacing-md);
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
-    }
-    .feedback-column .strength-icon { color: var(--success-color); }
-    .feedback-column .weakness-icon { color: var(--danger-color); }
-    
-    .feedback-card {
-        background-color: var(--primary-dark);
-        border-radius: var(--border-radius);
-        padding: var(--spacing-md);
-        margin-bottom: var(--spacing-sm);
-        border: 1px solid var(--primary-light);
-    }
-    .feedback-card .point {
-        margin-bottom: var(--spacing-sm);
-    }
-    .feedback-card .olq-tag {
-        font-size: 0.8rem;
-        color: var(--accent-color);
-        font-weight: bold;
-        opacity: 0.8;
+    .feedback-modal h5 {
+      color: var(--neutral-light);
+      margin-top: var(--spacing-md);
+      margin-bottom: var(--spacing-sm);
     }
 
-    .olq-assessment-list {
-        list-style-type: none;
-        padding-left: 0;
-    }
-    .olq-assessment-item {
-        display: flex;
-        gap: var(--spacing-md);
-        background-color: var(--primary-dark);
-        border-radius: var(--border-radius);
-        padding: var(--spacing-md);
-        margin-bottom: var(--spacing-sm);
-        border: 1px solid var(--primary-light);
-    }
-    .olq-assessment-item strong {
-        color: var(--accent-color);
-        flex-basis: 180px;
-    }
-
-    .action-plan-section {
-        margin-bottom: var(--spacing-lg);
-    }
-    .action-plan-section h4 {
-        color: var(--neutral-light);
-        margin-bottom: var(--spacing-md);
-        border-left: 3px solid var(--success-color);
-        padding-left: var(--spacing-sm);
-    }
-    .action-plan-section li {
-        background-color: var(--primary-dark);
-        padding: var(--spacing-sm) var(--spacing-md);
-        border-radius: var(--border-radius);
-        margin-bottom: var(--spacing-sm);
-        list-style-type: none;
-    }
 
     /* Content Management Modals */
     .content-list {
@@ -805,7 +738,7 @@
       gap: var(--spacing-lg);
     }
 
-    /* Interview Simulator */
+    /* Interview Simulator & Chat */
     .interview-container {
         display: flex;
         flex-direction: column;
@@ -827,6 +760,7 @@
         padding: var(--spacing-sm) var(--spacing-md);
         border-radius: var(--border-radius);
         line-height: 1.5;
+        word-wrap: break-word;
     }
     .chat-bubble.ai {
         background-color: var(--primary-light);
@@ -846,6 +780,15 @@
         align-items: center;
         gap: var(--spacing-md);
         padding: var(--spacing-md) 0;
+    }
+
+    .chat-input-form {
+        display: flex;
+        gap: var(--spacing-md);
+    }
+
+    .chat-input-form input {
+        flex-grow: 1;
     }
     
     .mic-button {
@@ -879,6 +822,171 @@
       font-weight: 600;
       color: var(--neutral-light);
     }
+
+    /* OIR TEST */
+    .oir-question-container {
+      margin-bottom: var(--spacing-lg);
+    }
+    .oir-question-container img {
+      max-width: 100%;
+      background: white;
+      padding: var(--spacing-sm);
+      border-radius: var(--border-radius);
+    }
+    .oir-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-lg);
+    }
+    .oir-option {
+      display: block;
+      background-color: var(--primary-dark);
+      border: 1px solid var(--primary-light);
+      padding: var(--spacing-md);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .oir-option:hover {
+      background-color: var(--primary-light);
+      border-color: var(--accent-color);
+    }
+    .oir-option.selected {
+      background-color: var(--accent-color);
+      color: var(--primary-dark);
+      font-weight: bold;
+      border-color: var(--accent-color);
+    }
+    .oir-option input { display: none; }
+    .oir-option img {
+      width: 100%;
+    }
+    .oir-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--spacing-lg);
+    }
+    .oir-results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+      gap: var(--spacing-sm);
+      margin-top: var(--spacing-md);
+    }
+    .oir-result-item {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+    }
+    .oir-result-item.correct {
+      background-color: var(--success-color);
+      color: var(--primary-dark);
+    }
+    .oir-result-item.incorrect {
+      background-color: var(--danger-color);
+      color: var(--text-light);
+    }
+
+    /* GPE View */
+    .gpe-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-xl);
+      height: 80vh;
+    }
+    .gpe-problem-pane, .gpe-solution-pane {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    .gpe-map {
+      width: 100%;
+      height: auto;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--primary-light);
+    }
+    .gpe-problem-statement {
+      background: var(--primary-dark);
+      padding: var(--spacing-md);
+      border-radius: var(--border-radius);
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+    .gpe-solution-pane textarea {
+      flex-grow: 1;
+      min-height: 400px;
+    }
+    
+    /* Current Affairs */
+    .news-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: var(--spacing-lg);
+    }
+    .news-card {
+        background-color: var(--primary-dark);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        border-left: 4px solid var(--accent-color);
+    }
+    .news-card h3 {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    /* Topic Briefer */
+    .topic-briefer-form {
+      display: flex;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+    .topic-briefer-form input { flex-grow: 1; }
+    .briefer-content {
+      white-space: pre-wrap;
+      background-color: var(--primary-dark);
+      padding: var(--spacing-md);
+      border-radius: var(--border-radius);
+      font-family: monospace;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    /* OLQ Dashboard */
+    .olq-dashboard-container {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: var(--spacing-xl);
+      align-items: flex-start;
+    }
+    .radar-chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .radar-chart-svg {
+      width: 100%;
+      height: auto;
+    }
+    .radar-chart-axis { stroke: var(--primary-light); stroke-width: 1; }
+    .radar-chart-level { stroke: var(--primary-light); stroke-width: 1; stroke-dasharray: 4 4; }
+    .radar-chart-label { fill: var(--neutral-light); font-size: 10px; text-anchor: middle; }
+    .radar-chart-area { fill: var(--accent-glow-strong); stroke: var(--accent-color); stroke-width: 2; }
+    .olq-interpretation-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .olq-interpretation-table td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--primary-light);
+    }
+    .olq-interpretation-table tr:last-child td { border: none; }
+    .olq-interpretation-table strong { color: var(--accent-color); }
+
 
     /* Keyframe Animations */
     @keyframes spin {
@@ -948,6 +1056,13 @@
     }
     
     /* Responsive */
+    @media (max-width: 992px) {
+        .gpe-container, .olq-dashboard-container {
+            grid-template-columns: 1fr;
+            height: auto;
+        }
+    }
+
     @media (max-width: 768px) {
       .app-layout {
         flex-direction: column;
@@ -1003,6 +1118,9 @@
       .header-actions {
         width: 100%;
         justify-content: space-around;
+      }
+      .oir-options {
+        grid-template-columns: 1fr;
       }
     }
 
