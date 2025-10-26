@@ -121,9 +121,27 @@
         margin-top: auto;
         padding-top: var(--spacing-md);
         border-top: 1px solid var(--primary-light);
-        text-align: center;
         font-size: 0.9rem;
         color: var(--neutral-light);
+    }
+
+    .sidebar-user-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+        text-align: left;
+    }
+    .sidebar-profile-pic {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: var(--spacing-md);
+        border: 2px solid var(--primary-light);
+    }
+    .sidebar-footer p {
+        line-height: 1.3;
+        margin: 0;
     }
 
     .sidebar-footer button {
@@ -134,7 +152,6 @@
         border-radius: var(--border-radius);
         cursor: pointer;
         width: 100%;
-        margin-top: var(--spacing-md);
         transition: background-color 0.2s ease;
         font-family: var(--font-body);
         font-weight: 600;
@@ -723,7 +740,7 @@
       border: 1px solid var(--primary-light);
       border-radius: var(--border-radius);
       padding: var(--spacing-lg);
-      margin-bottom: var(--spacing-xl);
+      margin-bottom: var(--spacing-lg);
     }
     .piq-form legend {
       font-family: var(--font-display);
@@ -737,6 +754,40 @@
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: var(--spacing-lg);
     }
+
+    /* Profile Page */
+    .profile-edit-container {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: var(--spacing-xl);
+    }
+    .profile-photo-section {
+      text-align: center;
+    }
+    .profile-picture {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--accent-color);
+      box-shadow: 0 0 20px var(--accent-glow);
+      margin-bottom: var(--spacing-lg);
+    }
+    .profile-photo-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    .profile-details-section h2 {
+      font-family: var(--font-display);
+      color: var(--accent-color);
+      margin-bottom: var(--spacing-sm);
+    }
+    .profile-details-section p {
+      color: var(--neutral-light);
+      margin-bottom: var(--spacing-md);
+    }
+
 
     /* Interview Simulator & Chat */
     .interview-container {
@@ -1057,7 +1108,7 @@
     
     /* Responsive */
     @media (max-width: 992px) {
-        .gpe-container, .olq-dashboard-container {
+        .gpe-container, .olq-dashboard-container, .profile-edit-container {
             grid-template-columns: 1fr;
             height: auto;
         }

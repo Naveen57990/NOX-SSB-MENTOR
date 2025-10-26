@@ -548,12 +548,25 @@ const Leaderboard = ({ users }) => {
         </div>
     );
 };
-// FIX: Implemented component to return JSX, resolving 'cannot be used as a JSX component' error.
+
 const PIQForm = ({ onSave, initialData }) => {
     const [formData, setFormData] = useState(initialData || {});
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        // handle nested objects for education
+        if (name.includes('.')) {
+            const [section, field] = name.split('.');
+            setFormData(prev => ({
+                ...prev,
+                [section]: {
+                    ...prev[section],
+                    [field]: value
+                }
+            }));
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleSubmit = (e) => {
@@ -563,14 +576,58 @@ const PIQForm = ({ onSave, initialData }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
-                <input name="education" value={formData.education || ''} onChange={handleChange} placeholder="Education (e.g., B.Tech CSE)" />
-                <input name="hobbies" value={formData.hobbies || ''} onChange={handleChange} placeholder="Hobbies & Interests" />
-                <input name="sports" value={formData.sports || ''} onChange={handleChange} placeholder="Sports & Games Played" />
-                <input name="achievements" value={formData.achievements || ''} onChange={handleChange} placeholder="Achievements" />
-            </div>
-            <button type="submit" className="btn" style={{marginTop: '1rem'}}>Save PIQ</button>
+        <form onSubmit={handleSubmit} className="piq-form">
+            <fieldset>
+                <legend>Personal Details</legend>
+                <div className="piq-form-grid">
+                    <input name="dateOfBirth" type="date" value={formData.dateOfBirth || ''} onChange={handleChange} placeholder="Date of Birth" />
+                    <input name="placeOfBirth" value={formData.placeOfBirth || ''} onChange={handleChange} placeholder="Place of Birth" />
+                    <input name="state" value={formData.state || ''} onChange={handleChange} placeholder="State of Domicile" />
+                    <input name="religion" value={formData.religion || ''} onChange={handleChange} placeholder="Religion" />
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Family Background</legend>
+                <div className="piq-form-grid">
+                    <input name="fatherName" value={formData.fatherName || ''} onChange={handleChange} placeholder="Father's Name" />
+                    <input name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} placeholder="Father's Occupation" />
+                    <input name="motherName" value={formData.motherName || ''} onChange={handleChange} placeholder="Mother's Name" />
+                    <input name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} placeholder="Mother's Occupation" />
+                    <textarea name="siblings" value={formData.siblings || ''} onChange={handleChange} placeholder="Details of Siblings (Age, Occupation)" style={{gridColumn: '1 / -1'}} rows={3}/>
+                </div>
+            </fieldset>
+            
+            <fieldset>
+                <legend>Educational Background</legend>
+                 <p style={{fontSize: '0.9rem', color: 'var(--neutral-light)', marginBottom: 'var(--spacing-md)'}}>Enter details for Class 10, Class 12, and Graduation.</p>
+                 <div className="piq-form-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
+                    <input name="education10.school" value={formData.education10?.school || ''} onChange={handleChange} placeholder="Class 10 School" />
+                    <input name="education10.year" value={formData.education10?.year || ''} onChange={handleChange} placeholder="Class 10 Year" />
+                    <input name="education10.percentage" value={formData.education10?.percentage || ''} onChange={handleChange} placeholder="Class 10 %" />
+
+                    <input name="education12.school" value={formData.education12?.school || ''} onChange={handleChange} placeholder="Class 12 School/College" />
+                    <input name="education12.year" value={formData.education12?.year || ''} onChange={handleChange} placeholder="Class 12 Year" />
+                    <input name="education12.percentage" value={formData.education12?.percentage || ''} onChange={handleChange} placeholder="Class 12 %" />
+                    
+                    <input name="graduation.college" value={formData.graduation?.college || ''} onChange={handleChange} placeholder="Graduation College" />
+                    <input name="graduation.degree" value={formData.graduation?.degree || ''} onChange={handleChange} placeholder="Degree (e.g. B.Tech CSE)" />
+                    <input name="graduation.percentage" value={formData.graduation?.percentage || ''} onChange={handleChange} placeholder="Graduation %" />
+                 </div>
+            </fieldset>
+            
+            <fieldset>
+                <legend>Extra-Curriculars & Previous Attempts</legend>
+                <div className="piq-form-grid">
+                     <textarea name="hobbies" value={formData.hobbies || ''} onChange={handleChange} placeholder="Hobbies & Interests" rows={3}/>
+                     <textarea name="sports" value={formData.sports || ''} onChange={handleChange} placeholder="Sports & Games Played (mention level of participation)" rows={3}/>
+                     <textarea name="achievements" value={formData.achievements || ''} onChange={handleChange} placeholder="Achievements in academics, sports, etc." rows={3}/>
+                     <textarea name="ncc" value={formData.ncc || ''} onChange={handleChange} placeholder="NCC Experience (Wing, Certificate, Rank)" rows={3}/>
+                     <textarea name="previousAttempts" value={formData.previousAttempts || ''} onChange={handleChange} placeholder="Previous SSB Attempts (Entry, Place, Batch/Chest No., Result)" rows={3}/>
+                </div>
+            </fieldset>
+            
+            <button type="submit" className="btn btn-primary btn-block" style={{marginTop: '1.5rem'}}>Save PIQ Data</button>
         </form>
     );
 };
@@ -1344,6 +1401,66 @@ const OLQDashboard = ({ user, calculateOLQScores }) => {
     );
 };
 
+const ProfilePage = ({ user, onUpdate, onGeneratePhoto }) => {
+    const [bio, setBio] = useState(user.bio || '');
+    const [photo, setPhoto] = useState(user.photo || '');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const base64 = await fileToBase64(file);
+            setPhoto(base64);
+        }
+    };
+
+    const handleGenerateClick = async () => {
+        setIsGenerating(true);
+        const newPhoto = await onGeneratePhoto();
+        if(newPhoto) {
+            setPhoto(newPhoto);
+        }
+        setIsGenerating(false);
+    };
+    
+    const handleSave = () => {
+        onUpdate({ bio, photo });
+        alert('Profile saved!');
+    };
+
+    return (
+        <div>
+            <div className="page-header"><h1>My Profile</h1></div>
+            <div className="card">
+                <div className="profile-edit-container">
+                    <div className="profile-photo-section">
+                        <img src={photo || 'https://i.imgur.com/V4RclNb.png'} alt="Profile" className="profile-picture" />
+                        <div className="profile-photo-actions">
+                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                             <button className="btn btn-secondary" onClick={() => fileInputRef.current.click()}>Upload Photo</button>
+                             <button className="btn btn-secondary" onClick={handleGenerateClick} disabled={isGenerating}>
+                                {isGenerating ? 'Generating...' : 'Generate with AI'}
+                             </button>
+                        </div>
+                    </div>
+                    <div className="profile-details-section">
+                        <h2>Bio</h2>
+                        <p>Write a short bio about your aspirations and personality.</p>
+                        <textarea
+                            value={bio}
+                            onChange={(e) => setBio(e.target.value)}
+                            rows={6}
+                            placeholder="Tell us about yourself..."
+                        />
+                        <button className="btn btn-primary" onClick={handleSave} style={{marginTop: '1rem'}}>Save Profile</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 // --- MAIN APP ---
 const App = () => {
@@ -1417,7 +1534,17 @@ const App = () => {
     const handleLogin = (name, rollNumber) => {
         let user = users.find(u => u.rollNumber === rollNumber);
         if (!user) {
-            user = { name, rollNumber, testResults: {}, score: 0, piqData: {}, persona: 'psychologist', unlockedBadges: [] };
+            user = { 
+                name, 
+                rollNumber, 
+                testResults: {}, 
+                score: 0, 
+                piqData: {}, 
+                persona: 'psychologist', 
+                unlockedBadges: [],
+                photo: null,
+                bio: ''
+            };
         } else {
             user.name = name; // Update name in case it's different
         }
@@ -1477,6 +1604,30 @@ const App = () => {
             return checkAndAwardBadges(userWithNewScore);
         });
     };
+    
+    const handleGeneratePhoto = async () => {
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: { parts: [{ text: 'A professional headshot of a young, aspiring military officer from India, looking determined and confident. Dressed in formal attire. Neutral background.' }] },
+                config: { responseModalities: [Modality.IMAGE] }
+            });
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    return `data:image/png;base64,${part.inlineData.data}`;
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error("AI photo generation failed:", error);
+            alert("Failed to generate photo. Please try again.");
+            return null;
+        }
+    };
+
+    const handleProfileUpdate = (profileData) => {
+        setCurrentUser(prev => ({...prev, ...profileData}));
+    };
 
     const handleSavePiq = (piqData) => setCurrentUser(prev => ({...prev, piqData}));
     const handlePersonaChange = (persona) => setCurrentUser(prev => ({...prev, persona}));
@@ -1498,6 +1649,7 @@ const App = () => {
     const renderView = () => {
         switch (view) {
             case 'dashboard': return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
+            case 'profile': return <ProfilePage user={currentUser} onUpdate={handleProfileUpdate} onGeneratePhoto={handleGeneratePhoto} />;
             case 'captain nox': return <CaptainNox user={currentUser} calculateOLQScores={calculateOLQScores} />;
             case 'olq dashboard': return <OLQDashboard user={currentUser} calculateOLQScores={calculateOLQScores} />;
             case 'current affairs': return <CurrentAffairsView />;
@@ -1516,7 +1668,7 @@ const App = () => {
     };
 
     const navLinks = [
-      'dashboard', 'olq dashboard', 'captain nox', 'current affairs', 'topic briefer', '|', 'oir', 'gpe', 'tat', 'wat', 'srt', 'sdt', 'lecturerette', 'interview', '|', 'leaderboard'
+      'dashboard', 'profile', 'olq dashboard', 'captain nox', 'current affairs', 'topic briefer', '|', 'oir', 'gpe', 'tat', 'wat', 'srt', 'sdt', 'lecturerette', 'interview', '|', 'leaderboard'
     ];
 
     return (
@@ -1532,7 +1684,15 @@ const App = () => {
                             })}
                         </ul>
                     </nav>
-                    <div className="sidebar-footer"><p>Logged in as: <strong>{currentUser.name}</strong><br/>({currentUser.rollNumber})</p><button onClick={handleLogout}>Logout</button></div>
+                    <div className="sidebar-footer">
+                        <div className="sidebar-user-info">
+                            <img src={currentUser.photo || 'https://i.imgur.com/V4RclNb.png'} alt="User" className="sidebar-profile-pic"/>
+                            <div>
+                                <p>Logged in as:<br/><strong>{currentUser.name}</strong><br/>({currentUser.rollNumber})</p>
+                            </div>
+                        </div>
+                        <button onClick={handleLogout}>Logout</button>
+                    </div>
                 </aside>
                 <main className="main-content">{renderView()}</main>
             </div>
