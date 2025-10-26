@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -64,18 +65,18 @@ const db = {
 
 // --- DATA & CONFIG CONSTANTS ---
 const TAT_IMAGES_DEFAULT = [
-    "https://i.imgur.com/8os3v26.jpeg", // Boy looking out window
-    "https://i.imgur.com/m4L35vC.jpeg", // Man at desk
-    "https://i.imgur.com/T5a2F3s.jpeg", // Field scene with person down
-    "https://i.imgur.com/y3J3f7Y.jpeg", // Bedroom scene
-    "https://i.imgur.com/eYhPh2T.jpeg", // Lab/workshop scene
-    "https://i.imgur.com/O0B8a4l.jpeg", // Rock climbing
-    "https://i.imgur.com/Jd1mJtL.jpeg", // Group planning
-    "https://i.imgur.com/bW3qY0f.jpeg", // Formal couple
-    "https://i.imgur.com/wP0b6bB.jpeg", // Stormy sea
-    "https://i.imgur.com/c1g2g3H.jpeg", // Lone person in desert
-    "https://i.imgur.com/k9f7b1s.jpeg", // Rescue scene
-    "https://i.imgur.com/5J3e2eF.png"  // Blank card
+    "https://images.weserv.nl/?url=i.imgur.com/8os3v26.jpeg", // Boy looking out window
+    "https://images.weserv.nl/?url=i.imgur.com/m4L35vC.jpeg", // Man at desk
+    "https://images.weserv.nl/?url=i.imgur.com/T5a2F3s.jpeg", // Field scene with person down
+    "https://images.weserv.nl/?url=i.imgur.com/y3J3f7Y.jpeg", // Bedroom scene
+    "https://images.weserv.nl/?url=i.imgur.com/eYhPh2T.jpeg", // Lab/workshop scene
+    "https://images.weserv.nl/?url=i.imgur.com/O0B8a4l.jpeg", // Rock climbing
+    "https://images.weserv.nl/?url=i.imgur.com/Jd1mJtL.jpeg", // Group planning
+    "https://images.weserv.nl/?url=i.imgur.com/bW3qY0f.jpeg", // Formal couple
+    "https://images.weserv.nl/?url=i.imgur.com/wP0b6bB.jpeg", // Stormy sea
+    "https://images.weserv.nl/?url=i.imgur.com/c1g2g3H.jpeg", // Lone person in desert
+    "https://images.weserv.nl/?url=i.imgur.com/k9f7b1s.jpeg", // Rescue scene
+    "https://images.weserv.nl/?url=i.imgur.com/5J3e2eF.png"  // Blank card
 ];
 const WAT_WORDS_DEFAULT = ['Duty', 'Courage', 'Team', 'Defeat', 'Lead', 'Responsibility', 'Friend', 'Failure', 'Order', 'Discipline'];
 const SRT_SCENARIOS_DEFAULT = ['You are on your way to an important exam and you see an accident. You are the first person to arrive. What would you do?', 'During a group task, your team members are not cooperating. What would you do?'];
@@ -85,12 +86,12 @@ const OIR_QUESTIONS_DEFAULT = [
     { type: 'verbal', question: 'Which number should come next in the series? 1, 4, 9, 16, ?', options: ['20', '25', '30', '36'], answer: 1 },
     { type: 'verbal', question: 'DEF is to ABC as LMN is to ?', options: ['IJK', 'HIJ', 'OPQ', 'GHI'], answer: 0 },
     // NOTE: In a real app, these image URLs would be hosted properly. Using placeholders.
-    { type: 'non-verbal', question: 'https://i.imgur.com/rGfAP83.png', options: ['https://i.imgur.com/8F2jQqg.png', 'https://i.imgur.com/L1n7Q3f.png', 'https://i.imgur.com/6XkY3Zf.png', 'https://i.imgur.com/P2tY7Xw.png'], answer: 2 },
+    { type: 'non-verbal', question: 'https://images.weserv.nl/?url=i.imgur.com/rGfAP83.png', options: ['https://images.weserv.nl/?url=i.imgur.com/8F2jQqg.png', 'https://images.weserv.nl/?url=i.imgur.com/L1n7Q3f.png', 'https://images.weserv.nl/?url=i.imgur.com/6XkY3Zf.png', 'https://images.weserv.nl/?url=i.imgur.com/P2tY7Xw.png'], answer: 2 },
     { type: 'verbal', question: 'If FRIEND is coded as HUMJTK, how is CANDLE written in that code?', options: ['EDRIRL', 'DCORHT', 'ESJFTM', 'DEQJQM'], answer: 0 },
 ];
 const GPE_SCENARIOS_DEFAULT = [{
     title: "Flood Rescue Mission",
-    mapImage: "https://i.imgur.com/kYqE1wS.png", // Placeholder map
+    mapImage: "https://images.weserv.nl/?url=i.imgur.com/kYqE1wS.png", // Placeholder map
     problemStatement: "You are a group of 8 college students on a hiking trip near the village of Rampur. A sudden cloudburst has caused flash floods. You are at a point A. The bridge connecting Rampur to the main road has been washed away. You overhear on a villager's radio that a rescue team will arrive in 3 hours. You have the following information:\n- A group of 15 villagers, including elderly and children, are stranded at the village temple (Point B), which is on higher ground but isolated.\n- Two injured hikers are trapped in a cave at Point C, needing immediate first aid.\n- The local dispensary at Point D has a first aid box but the doctor is out of town.\n- A partially damaged boat is available at Point E.\nYou have a small first aid kit, a rope, and mobile phones with low battery. Your task is to make a plan to ensure the safety of everyone until the rescue team arrives."
 }];
 
@@ -105,6 +106,8 @@ const BADGES = {
     orator_apprentice: { name: "Orator Apprentice", desc: "Complete your first Lecturerette.", icon: "https://cdn-icons-png.flaticon.com/512/3062/3062531.png" },
     interviewer_ace: { name: "Interviewer Ace", desc: "Complete your first AI voice interview.", icon: "https://cdn-icons-png.flaticon.com/512/10239/10239456.png" },
 };
+
+const DEFAULT_PROFILE_PIC = 'https://images.weserv.nl/?url=i.imgur.com/V4RclNb.png';
 
 // --- AI INTEGRATION ---
 const ai = new GoogleGenAI({ apiKey: API_KEY });
@@ -239,8 +242,7 @@ const LoginPage = ({ onLogin }) => {
         </div>
     );
 };
-// FIX: Implemented component to return JSX, resolving 'cannot be used as a JSX component' error.
-// FIX: Changed component to use React.FC to handle the `key` prop correctly and updated `onViewFeedback` to accept a function returning `any` to match the inferred type at the call site.
+
 const TestHistoryCard: React.FC<{ testType: string; results: any[]; onViewFeedback: (feedback: any) => any; }> = ({ testType, results, onViewFeedback }) => {
     const latestResult = results && results.length > 0 ? results[results.length - 1] : null;
     return (
@@ -249,7 +251,7 @@ const TestHistoryCard: React.FC<{ testType: string; results: any[]; onViewFeedba
             {latestResult ? (
                 <>
                     <p>Last attempt: {new Date(latestResult.date).toLocaleDateString()}</p>
-                    <p>Score: {latestResult.score}</p>
+                    {typeof latestResult.score === 'number' && !isNaN(latestResult.score) && <p>Score: {latestResult.score}</p>}
                     {latestResult.feedback && <button className="btn btn-secondary" onClick={() => onViewFeedback(latestResult.feedback)}>View Feedback</button>}
                 </>
             ) : (
@@ -260,7 +262,9 @@ const TestHistoryCard: React.FC<{ testType: string; results: any[]; onViewFeedba
     );
 };
 
-const ManageTatModal = ({ images, onAdd, onAddMultiple, onRemove, onClose }) => {
+// FIX: Property 'onAddMultiple' is missing... but required...
+// Removed unused 'onAddMultiple' prop which was causing a type error at the call site.
+const ManageTatModal = ({ images, onAdd, onRemove, onClose }) => {
     const [newImageUrl, setNewImageUrl] = useState('');
     const fileInputRef = useRef(null);
     const handleAddUrl = (e) => { e.preventDefault(); if (newImageUrl.trim()) { onAdd(newImageUrl.trim()); setNewImageUrl(''); } };
@@ -272,7 +276,19 @@ const ManageTatModal = ({ images, onAdd, onAddMultiple, onRemove, onClose }) => 
          <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <h2>Manage TAT Images</h2>
-                <ul className="content-list">{images.map((img, index) => (<li key={index} className="content-list-item"><img src={img} alt={`TAT Image ${index + 1}`} className="image-preview" /><span className="item-text">{img.substring(0, 40)}...</span><button className="btn btn-danger btn-secondary" onClick={() => onRemove(index)}>Remove</button></li>))}</ul>
+                <ul className="content-list">
+                    {images.length > 0 ? images.map((img, index) => (
+                        <li key={index} className="content-list-item">
+                            <img src={img} alt={`TAT Image ${index + 1}`} className="image-preview" />
+                            <span className="item-text">{img.substring(0, 40)}...</span>
+                            <button className="btn btn-danger btn-secondary" onClick={() => onRemove(index)}>Remove</button>
+                        </li>
+                    )) : (
+                        <li className="content-list-item-empty">
+                            <p>No images found. Add new images using the options below.</p>
+                        </li>
+                    )}
+                </ul>
                 <form className="add-item-form" onSubmit={handleAddUrl}><input type="text" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} placeholder="Paste new image URL here" style={{flex: 1}}/><button type="submit" className="btn btn-primary">Add URL</button></form>
                 <div className="upload-section"><h4>Or Upload an Image</h4><input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} /></div>
                 <div className="text-center" style={{ marginTop: '2rem' }}><button onClick={onClose} className="btn btn-secondary">Close</button></div>
@@ -292,7 +308,18 @@ const ManageContentModal = ({ title, items, onAdd, onAddMultiple, onRemove, onCl
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <h2>{title}</h2>
-                <ul className="content-list">{items.map((item, index) => (<li key={index} className="content-list-item"><span className="item-text" style={{whiteSpace: 'normal'}}>{item}</span><button className="btn btn-danger btn-secondary" onClick={() => onRemove(index)}>Remove</button></li>))}</ul>
+                <ul className="content-list">
+                    {items.length > 0 ? items.map((item, index) => (
+                        <li key={index} className="content-list-item">
+                            <span className="item-text" style={{whiteSpace: 'normal'}}>{item}</span>
+                            <button className="btn btn-danger btn-secondary" onClick={() => onRemove(index)}>Remove</button>
+                        </li>
+                    )) : (
+                         <li className="content-list-item-empty">
+                             <p>No items found. Add new items using the options below.</p>
+                        </li>
+                    )}
+                </ul>
                 <form className="add-item-form" onSubmit={handleAddItem}>
                     {type === 'SRT' ? <textarea value={newItem} onChange={e => setNewItem(e.target.value)} placeholder="Enter new scenario" style={{flex: 1, minHeight: '60px'}}/> : <input type="text" value={newItem} onChange={e => setNewItem(e.target.value)} placeholder="Enter new word/topic" style={{flex: 1}}/> }
                     <button type="submit" className="btn btn-primary">Add</button>
@@ -304,8 +331,6 @@ const ManageContentModal = ({ title, items, onAdd, onAddMultiple, onRemove, onCl
     );
 };
 
-// FIX: Added explicit prop types to resolve conflict with React's 'key' prop.
-// FIX: Changed component to use React.FC to ensure the `key` prop is handled correctly.
 const Badge: React.FC<{ badgeId: string, unlocked: boolean }> = ({ badgeId, unlocked }) => {
     const badge = BADGES[badgeId];
     return (
@@ -352,7 +377,6 @@ const Dashboard = ({ user, onManage, onNavigate, onPersonaChange }) => {
     );
 };
 
-// FIX: Implemented component to return JSX, resolving 'cannot be used as a JSX component' error.
 const FeedbackModal = ({ feedback, onClose }) => {
     if (!feedback) return null;
 
@@ -424,13 +448,11 @@ const FeedbackModal = ({ feedback, onClose }) => {
         </div>
     );
 };
-// FIX: Implemented component to return JSX, resolving 'cannot be used as a JSX component' error.
 const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [responses, setResponses] = useState([]);
     const [currentResponse, setCurrentResponse] = useState('');
     const [timeLeft, setTimeLeft] = useState(timeLimit);
-    // FIX: Changed NodeJS.Timeout to number for browser compatibility.
     const timerRef = useRef<number | null>(null);
 
     const handleNext = useCallback(() => {
@@ -514,7 +536,6 @@ const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
         </div>
     );
 };
-// FIX: Implemented component to return JSX, resolving 'cannot be used as a JSX component' error.
 const SDTView = ({ onComplete }) => {
     const [responses, setResponses] = useState(Array(SDT_PROMPTS.length).fill(''));
 
@@ -689,7 +710,6 @@ const VoiceInterviewSimulator = ({ piqData, onComplete }) => {
         if (sessionPromiseRef.current) return;
         setStatus('Initializing...');
         
-        // FIX: Cast window to 'any' to access vendor-prefixed webkitAudioContext.
         const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
         const outputNode = outputAudioContext.createGain();
         const sources = new Set();
@@ -776,7 +796,6 @@ const VoiceInterviewSimulator = ({ piqData, onComplete }) => {
             setIsRecording(true);
             setStatus('Listening...');
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            // FIX: Cast window to 'any' to access vendor-prefixed webkitAudioContext.
             const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
             audioContextRef.current = inputAudioContext;
             const source = inputAudioContext.createMediaStreamSource(stream);
@@ -824,7 +843,6 @@ const VoiceInterviewSimulator = ({ piqData, onComplete }) => {
     );
 };
 
-// FIX: Implemented component to return JSX, resolving 'cannot be used as a JSX component' error.
 const InterviewPage = ({ user, onSavePiq, onStartInterview, onViewFeedback }) => {
     return (
         <div>
@@ -849,7 +867,8 @@ const InterviewPage = ({ user, onSavePiq, onStartInterview, onViewFeedback }) =>
                     <ul>
                         {user.testResults.Interview.map((item, index) => (
                             <li key={index}>
-                                Interview on {new Date(item.date).toLocaleString()} - Score: {item.score}
+                                Interview on {new Date(item.date).toLocaleString()}
+                                {typeof item.score === 'number' && ` - Score: ${item.score}`}
                                 <button onClick={() => onViewFeedback(item.feedback)} style={{marginLeft: '1rem'}}>View Feedback</button>
                             </li>
                         ))}
@@ -863,7 +882,7 @@ const InterviewPage = ({ user, onSavePiq, onStartInterview, onViewFeedback }) =>
 };
 
 const CaptainNox = ({ user, calculateOLQScores }) => {
-    const [messages, setMessages] = useState([{ sender: 'AI', text: `Welcome, ${user.name}. I am Captain Nox, your personal mentor. I have reviewed your performance data. How can I help you prepare today? You can also ask me to generate a dynamic training plan for you.` }]);
+    const [messages, setMessages] = useState([{ sender: 'AI', text: `Welcome, ${user.name}. I am Captain Nox, your personal mentor. I have reviewed your performance data. How can I help you prepare today? You can also ask me to generate a dynamic training plan for you.`, timestamp: new Date().toISOString() }]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const chatEndRef = useRef(null);
@@ -877,7 +896,7 @@ const CaptainNox = ({ user, calculateOLQScores }) => {
         const userInput = customPrompt || input;
         if (!userInput.trim() || isLoading) return;
 
-        const userMessage = { sender: 'User', text: userInput };
+        const userMessage = { sender: 'User', text: userInput, timestamp: new Date().toISOString() };
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
@@ -889,11 +908,11 @@ const CaptainNox = ({ user, calculateOLQScores }) => {
                 model: 'gemini-2.5-pro',
                 contents: prompt,
             });
-            const aiMessage = { sender: 'AI', text: response.text };
+            const aiMessage = { sender: 'AI', text: response.text, timestamp: new Date().toISOString() };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
             console.error("Captain Nox API error:", error);
-            const errorMessage = { sender: 'AI', text: "I'm sorry, I encountered an error. Please try asking again." };
+            const errorMessage = { sender: 'AI', text: "I'm sorry, I encountered an error. Please try asking again.", timestamp: new Date().toISOString() };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
@@ -902,7 +921,6 @@ const CaptainNox = ({ user, calculateOLQScores }) => {
     
     const generatePlan = () => {
         const olqScores = calculateOLQScores(user);
-        // FIX: Cast `a` and `b` to number to resolve arithmetic operation error on unknown type.
         const weakestOlqs = Object.entries(olqScores).sort(([,a],[,b]) => (a as number) - (b as number)).slice(0, 3).map(([name]) => name);
         const planPrompt = `Based on my performance data and my weakest OLQs (${weakestOlqs.join(', ')}), generate a personalized 7-day training plan for me. Suggest specific tests in the app and other offline activities.`;
         handleSendMessage(null, planPrompt);
@@ -914,7 +932,12 @@ const CaptainNox = ({ user, calculateOLQScores }) => {
             <div className="card">
                 <div className="interview-container">
                     <div className="interview-transcript">
-                        {messages.map((msg, index) => (<div key={index} className={`chat-bubble ${msg.sender.toLowerCase()}`}>{msg.text}</div>))}
+                        {messages.map((msg, index) => (
+                             <div key={index} className={`chat-bubble ${msg.sender.toLowerCase()}`}>
+                                {msg.text}
+                                {msg.timestamp && <span className="chat-timestamp">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                            </div>
+                        ))}
                         {isLoading && <div className="chat-bubble ai">Thinking...</div>}
                         <div ref={chatEndRef} />
                     </div>
@@ -944,7 +967,6 @@ const LectureretteView = ({ topics, onComplete }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [transcript, setTranscript] = useState('');
 
-    // FIX: Changed NodeJS.Timeout to number for browser compatibility.
     const timerRef = useRef<number | null>(null);
     const sessionPromiseRef = useRef(null);
     const audioContextRef = useRef(null);
@@ -1004,7 +1026,9 @@ const LectureretteView = ({ topics, onComplete }) => {
                         const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
                         scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
                             const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                            const pcmBlob = { data: encode(new Uint8Array(new Int16Array(inputData.map(f => f * 32768)).buffer)), mimeType: 'audio/pcm;rate=16000' };
+                            const l = inputData.length; const int16 = new Int16Array(l);
+                            for (let i = 0; i < l; i++) { int16[i] = inputData[i] * 32768; }
+                            const pcmBlob = { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' };
                             sessionPromiseRef.current?.then((session) => session.sendRealtimeInput({ media: pcmBlob }));
                         };
                         source.connect(scriptProcessor);
@@ -1314,168 +1338,168 @@ const TopicBrieferView = () => {
 const RadarChart = ({ data }) => {
     const size = 500;
     const center = size / 2;
-    const radius = center * 0.8;
-    const levels = 5;
+    const numLevels = 5;
+    const radius = size * 0.4;
     const numAxes = data.length;
     const angleSlice = (2 * Math.PI) / numAxes;
 
-    const points = data.map((d, i) => {
-        const angle = angleSlice * i - Math.PI / 2;
-        const r = radius * (d.value / 100); // Assuming max score is 100 for normalization
-        return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
-    }).join(' ');
+    if (numAxes === 0) return null;
 
-    const axes = data.map((d, i) => {
-        const angle = angleSlice * i - Math.PI / 2;
-        const x = center + radius * Math.cos(angle);
-        const y = center + radius * Math.sin(angle);
-        return <line key={i} x1={center} y1={center} x2={x} y2={y} className="radar-chart-axis" />;
+    const getPoint = (level, angle) => ({
+        x: center + radius * level * Math.cos(angle - Math.PI / 2),
+        y: center + radius * level * Math.sin(angle - Math.PI / 2),
     });
 
-    const levelLines = Array.from({length: levels}).map((_, l) => {
-        const r = (radius / levels) * (l + 1);
-        const levelPoints = data.map((_, i) => {
-            const angle = angleSlice * i - Math.PI / 2;
-            return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
-        }).join(' ');
-        return <polygon key={l} points={levelPoints} fill="none" className="radar-chart-level" />;
-    });
-
-    const labels = data.map((d, i) => {
-        const angle = angleSlice * i - Math.PI / 2;
-        const r = radius * 1.1;
-        const x = center + r * Math.cos(angle);
-        const y = center + r * Math.sin(angle);
-        return <text key={i} x={x} y={y} className="radar-chart-label">{d.label}</text>;
-    });
+    const dataPoints = data.map((d, i) => getPoint(d.value, angleSlice * i));
+    const dataPath = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
 
     return (
-        <div className="radar-chart-container">
-            <svg viewBox={`0 0 ${size} ${size}`} className="radar-chart-svg">
-                <g>
-                    {levelLines}
-                    {axes}
-                    {labels}
-                    <polygon points={points} className="radar-chart-area" />
-                </g>
-            </svg>
-        </div>
+        <svg viewBox={`0 0 ${size} ${size}`} className="radar-chart-svg">
+            {/* Levels */}
+            {[...Array(numLevels)].map((_, levelIndex) => {
+                const levelRadius = radius * ((levelIndex + 1) / numLevels);
+                return <circle key={levelIndex} cx={center} cy={center} r={levelRadius} className="radar-chart-level" fill="none" />;
+            })}
+
+            {/* Axes and Labels */}
+            {data.map((d, i) => {
+                const angle = angleSlice * i;
+                const p1 = getPoint(0, angle);
+                const p2 = getPoint(1.1, angle);
+                const labelPoint = getPoint(1.2, angle);
+                
+                let textAnchor = "middle";
+                let dy = "0.3em";
+                const angleDeg = (angle * 180) / Math.PI;
+
+                if (angleDeg > 10 && angleDeg < 170) {
+                    textAnchor = "start";
+                } else if (angleDeg > 190 && angleDeg < 350) {
+                    textAnchor = "end";
+                }
+                
+                if (angleDeg > 260 && angleDeg < 280) dy = "-0.5em";
+                
+                return (
+                    <g key={i}>
+                        <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} className="radar-chart-axis" />
+                        <text x={labelPoint.x} y={labelPoint.y} dy={dy} className="radar-chart-label" style={{ textAnchor }}>
+                            {d.name}
+                        </text>
+                    </g>
+                );
+            })}
+
+            {/* Data Area */}
+            <polygon points={dataPath} className="radar-chart-area" />
+        </svg>
     );
 };
+;
 
-const OLQDashboard = ({ user, calculateOLQScores, isFriendView = false }) => {
-    const [interpretation, setInterpretation] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-
-    const olqScores = useMemo(() => calculateOLQScores(user), [user, calculateOLQScores]);
-    
+const OLQDashboard = ({ user, calculateOLQScores }) => {
+    const olqScores = calculateOLQScores(user);
     const chartData = useMemo(() => {
-        // FIX: Cast values from olqScores to number[] to use with Math.max, preventing errors with unknown[] type.
-        const maxScore = Math.max(...(Object.values(olqScores) as number[]), 1); // Avoid division by zero
-        return OLQ_LIST.map(olq => ({
-            label: olq.split(' ').map(s => s[0]).join(''),
-            // FIX: Cast property access on olqScores to number to resolve arithmetic operation error.
-            value: (((olqScores[olq] as number) || 0) / maxScore) * 100
-        }));
-    }, [olqScores]);
+        return OLQ_LIST.map(olq => ({ name: olq, value: olqScores[olq] || 0 }));
+    }, [user]);
 
-    const getInterpretation = async () => {
-        // FIX: Cast `v` to number to resolve comparison error on unknown type.
-        if (!Object.values(olqScores).some(v => (v as number) > 0)) return;
-        setIsLoading(true);
-        const prompt = `Given these aggregated Officer-Like Quality (OLQ) scores for an SSB aspirant: ${JSON.stringify(olqScores)}. Provide a brief, encouraging interpretation for each OLQ that has a score greater than zero. Also provide a summary of their overall officer potential based on this profile. Format the response as a simple text string.`;
-        try {
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: prompt });
-            setInterpretation(response.text);
-        } catch (error) {
-            console.error("OLQ interpretation error:", error);
-            setInterpretation("Could not generate interpretation.");
-        } finally {
-            setIsLoading(false);
-        }
+    const interpretations = {
+        "Effective Intelligence": "Ability to solve practical problems.",
+        "Reasoning Ability": "Grasping essentials well and arriving at logical conclusions.",
+        "Organizing Ability": "Putting resources to best use to achieve a goal.",
+        "Power of Expression": "Putting across one's ideas with ease and clarity.",
+        "Social Adaptability": "Ability to adapt to the social environment and get along with others.",
+        "Cooperation": "Working with others in harmony towards a common goal.",
+        "Sense of Responsibility": "Understanding and fulfilling one's duty.",
+        "Initiative": "Taking the first step in an unfamiliar situation.",
+        "Self Confidence": "Faith in one's own abilities to meet stressful situations.",
+        "Speed of Decision": "Ability to arrive at workable decisions quickly.",
+        "Ability to Influence a Group": "Enabling others to willingly work towards a common goal.",
+        "Liveliness": "A cheerful and optimistic outlook on life.",
+        "Determination": "A sustained effort to achieve objectives in spite of obstacles.",
+        "Courage": "The ability to appreciate and take calculated risks.",
+        "Stamina": "The capacity to withstand sustained physical and mental strain."
     };
-    
-    useEffect(() => { if(!isFriendView) getInterpretation() }, [olqScores, isFriendView]);
-    
+
     return (
         <div>
-            <div className="page-header"><h1>{isFriendView ? `${user.name}'s OLQ Profile` : 'OLQ Dashboard'}</h1></div>
-            <div className="card">
-                <div className="olq-dashboard-container">
-                    <RadarChart data={chartData} />
-                    <div>
-                        <h3>Detailed Scores</h3>
-                        <table className="olq-interpretation-table">
-                            <tbody>
-                                {OLQ_LIST.map(olq => <tr key={olq}><td><strong>{olq}</strong></td><td>{olqScores[olq] || 0}</td></tr>)}
-                            </tbody>
-                        </table>
+            <div className="page-header"><h1>OLQ Dashboard</h1></div>
+            <div className="olq-dashboard-container">
+                <div className="card">
+                    <div className="radar-chart-container">
+                        <RadarChart data={chartData} />
                     </div>
                 </div>
-                {!isFriendView && (
-                    <div style={{marginTop: '2rem'}}>
-                        <h3>AI Interpretation</h3>
-                        {isLoading ? <div className="loading-spinner"></div> : <p style={{whiteSpace: 'pre-wrap'}}>{interpretation || 'No data to interpret yet. Complete some tests to see your analysis.'}</p>}
-                    </div>
-                )}
+                <div className="card">
+                     <h2>Your OLQ Analysis</h2>
+                     <p>This chart visualizes your Officer-Like Qualities based on an analysis of all your completed tests. A higher value indicates that the quality was demonstrated more frequently in your responses.</p>
+                     <table className="olq-interpretation-table">
+                         <tbody>
+                            {OLQ_LIST.map(olq => (
+                                <tr key={olq}>
+                                    <td><strong>{olq}</strong></td>
+                                    <td>{interpretations[olq]}</td>
+                                </tr>
+                            ))}
+                         </tbody>
+                     </table>
+                </div>
             </div>
         </div>
-    );
+    )
 };
-
-const ProfilePage = ({ user, onUpdate, onGeneratePhoto }) => {
-    const [bio, setBio] = useState(user.bio || '');
-    const [photo, setPhoto] = useState(user.photo || '');
-    const [isGenerating, setIsGenerating] = useState(false);
+const ProfilePage = ({ user, onUpdateUser }) => {
+    const [name, setName] = useState(user.name);
+    const [rollNumber, setRollNumber] = useState(user.rollNumber);
+    const [profilePic, setProfilePic] = useState(user.profilePic || DEFAULT_PROFILE_PIC);
     const fileInputRef = useRef(null);
 
-    const handlePhotoUpload = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const base64 = await fileToBase64(file);
-            setPhoto(base64);
-        }
+    const handleSave = () => {
+        onUpdateUser({ name, rollNumber, profilePic });
+        alert('Profile updated!');
     };
 
-    const handleGenerateClick = async () => {
-        setIsGenerating(true);
-        const newPhoto = await onGeneratePhoto();
-        if(newPhoto) {
-            setPhoto(newPhoto);
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const base64 = await fileToBase64(file);
+                setProfilePic(base64);
+            } catch (err) {
+                console.error("Error converting file to base64:", err);
+                alert("Failed to upload image.");
+            }
         }
-        setIsGenerating(false);
     };
     
-    const handleSave = () => {
-        onUpdate({ bio, photo });
-        alert('Profile saved!');
-    };
+    const triggerFileSelect = () => fileInputRef.current.click();
 
     return (
         <div>
-            <div className="page-header"><h1>My Profile</h1></div>
+            <div className="page-header"><h1>Your Profile</h1></div>
             <div className="card">
                 <div className="profile-edit-container">
                     <div className="profile-photo-section">
-                        <img src={photo || 'https://i.imgur.com/V4RclNb.png'} alt="Profile" className="profile-picture" />
+                        <img src={profilePic} alt="Profile" className="profile-picture" />
                         <div className="profile-photo-actions">
-                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handlePhotoUpload} style={{ display: 'none' }} />
-                             <button className="btn btn-secondary" onClick={() => fileInputRef.current.click()}>Upload Photo</button>
-                             <button className="btn btn-secondary" onClick={handleGenerateClick} disabled={isGenerating}>
-                                {isGenerating ? 'Generating...' : 'Generate with AI'}
-                             </button>
+                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
+                            <button className="btn btn-secondary" onClick={triggerFileSelect}>Upload New Photo</button>
+                            <button className="btn btn-danger" onClick={() => setProfilePic(DEFAULT_PROFILE_PIC)}>Remove Photo</button>
                         </div>
                     </div>
                     <div className="profile-details-section">
-                        <h2>Bio</h2>
-                        <p>Write a short bio about your aspirations and personality.</p>
-                        <textarea
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            rows={6}
-                            placeholder="Tell us about yourself..."
-                        />
-                        <button className="btn btn-primary" onClick={handleSave} style={{marginTop: '1rem'}}>Save Profile</button>
+                        <h2>Edit Your Details</h2>
+                        <p>This information is used across the app.</p>
+                        <div className="form-group">
+                            <label htmlFor="profileName">Full Name</label>
+                            <input id="profileName" type="text" value={name} onChange={e => setName(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="profileRoll">Roll Number</label>
+                            <input id="profileRoll" type="text" value={rollNumber} disabled />
+                             <p style={{fontSize: '0.8rem', color: 'var(--neutral-light)', marginTop: '4px'}}>Roll number cannot be changed.</p>
+                        </div>
+                        <button className="btn btn-primary" onClick={handleSave}>Save Changes</button>
                     </div>
                 </div>
             </div>
@@ -1483,39 +1507,63 @@ const ProfilePage = ({ user, onUpdate, onGeneratePhoto }) => {
     );
 };
 
-const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, chats, calculateOLQScores }) => {
-    const [activeTab, setActiveTab] = useState('friends');
-    const [selectedFriendId, setSelectedFriendId] = useState(null);
-    const chatEndRef = useRef(null);
-
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [chats, selectedFriendId]);
-
-    const usersMap = useMemo(() => {
-        const map = {};
-        allUsers.forEach(u => map[u.userId] = u);
-        return map;
-    }, [allUsers]);
-
-    const friends = useMemo(() => (currentUser.friends || []).map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
-    const friendRequests = useMemo(() => (currentUser.friendRequests || []).map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
+const CommunityPage = ({ user, users, chats, onSendMessage }) => {
+    const [activeTab, setActiveTab] = useState('friends'); // friends, requests, all
+    const [selectedChat, setSelectedChat] = useState(null); // roll number of chat partner
+    const friendList = useMemo(() => users.filter(u => user.friends?.includes(u.rollNumber)), [user, users]);
+    const friendRequests = useMemo(() => users.filter(u => user.friendRequests?.includes(u.rollNumber)), [user, users]);
+    const allUsers = useMemo(() => users.filter(u => u.rollNumber !== user.rollNumber), [user, users]);
     
-    const selectedFriend = selectedFriendId ? usersMap[selectedFriendId] : null;
-    const currentChatHistory = selectedFriendId ? chats[[currentUser.userId, selectedFriendId].sort().join('_')] || [] : [];
-    
-    const renderFriendStatusButton = (user) => {
-        if ((currentUser.friends || []).includes(user.userId)) {
-            return <button className="btn btn-secondary" disabled>Friends</button>;
-        }
-        if ((user.friendRequests || []).includes(currentUser.userId)) {
-            return <button className="btn btn-secondary" disabled>Pending</button>;
-        }
-        if ((currentUser.friendRequests || []).includes(user.userId)) {
-            return <button className="btn btn-primary" onClick={() => onFriendAction('accept', user.userId)}>Accept</button>;
-        }
-        return <button className="btn btn-primary" onClick={() => onFriendAction('add', user.userId)}>Add Friend</button>;
+    const handleSendMessage = (text) => {
+        if (!selectedChat) return;
+        const message = {
+            sender: user.rollNumber,
+            text: text,
+            timestamp: new Date().toISOString()
+        };
+        onSendMessage(user.rollNumber, selectedChat, message);
     };
+    
+    const ChatView = ({ chatPartner, chatHistory }) => {
+        const [input, setInput] = useState('');
+        const chatEndRef = useRef(null);
+
+        useEffect(() => {
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, [chatHistory]);
+
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            if(input.trim()) {
+                handleSendMessage(input.trim());
+                setInput('');
+            }
+        };
+
+        return (
+            <div className="chat-view">
+                 <div className="interview-transcript">
+                    {chatHistory.map((msg, index) => {
+                        const senderIsUser = msg.sender === user.rollNumber;
+                        return (
+                           <div key={index} className={`chat-bubble ${senderIsUser ? 'user' : 'ai'}`}>
+                                {msg.text}
+                                {msg.timestamp && <span className="chat-timestamp">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                            </div>
+                        );
+                    })}
+                    <div ref={chatEndRef} />
+                </div>
+                <form onSubmit={handleSubmit} className="chat-input-form">
+                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Message ${chatPartner.name}`}/>
+                    <button type="submit" className="btn btn-primary">Send</button>
+                </form>
+            </div>
+        );
+    };
+
+    const selectedChatPartner = users.find(u => u.rollNumber === selectedChat);
+    const chatHistory = chats[`${[user.rollNumber, selectedChat].sort().join('_')}`] || [];
 
     return (
         <div>
@@ -1523,61 +1571,45 @@ const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, c
             <div className="community-container">
                 <div className="community-sidebar">
                     <div className="community-tabs">
-                        <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>Friends ({friends.length})</button>
-                        <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>Requests ({friendRequests.length})</button>
-                        <button className={activeTab === 'find' ? 'active' : ''} onClick={() => setActiveTab('find')}>Find Aspirants</button>
+                        <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>Friends</button>
+                        <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>
+                            Requests {friendRequests.length > 0 && <span className="notification-badge">{friendRequests.length}</span>}
+                        </button>
+                        <button className={activeTab === 'all' ? 'active' : ''} onClick={() => setActiveTab('all')}>All Cadets</button>
                     </div>
                     <div className="community-list">
-                        {activeTab === 'friends' && friends.map(f => (
-                            <div key={f.userId} className={`community-list-item ${selectedFriendId === f.userId ? 'active' : ''}`} onClick={() => setSelectedFriendId(f.userId)}>
-                                <img src={f.photo || 'https://i.imgur.com/V4RclNb.png'} alt={f.name} />
+                        {activeTab === 'friends' && friendList.map(f => (
+                            <div key={f.rollNumber} className={`community-list-item ${selectedChat === f.rollNumber ? 'active' : ''}`} onClick={() => setSelectedChat(f.rollNumber)}>
+                                <img src={f.profilePic || DEFAULT_PROFILE_PIC} alt={f.name}/>
                                 <span>{f.name}</span>
                             </div>
                         ))}
-                         {activeTab === 'requests' && friendRequests.map(u => (
-                            <div key={u.userId} className="community-list-item request">
-                                <img src={u.photo || 'https://i.imgur.com/V4RclNb.png'} alt={u.name} />
-                                <span>{u.name} wants to be friends.</span>
+                         {activeTab === 'all' && allUsers.map(f => (
+                            <div key={f.rollNumber} className="community-list-item request">
+                                <img src={f.profilePic || DEFAULT_PROFILE_PIC} alt={f.name}/>
+                                <span>{f.name}</span>
                                 <div className="request-actions">
-                                    <button onClick={() => onFriendAction('accept', u.userId)} className="btn btn-primary">Accept</button>
-                                    <button onClick={() => onFriendAction('decline', u.userId)} className="btn btn-secondary">Decline</button>
+                                    <button className="btn btn-secondary">Add Friend</button>
                                 </div>
-                            </div>
-                        ))}
-                        {activeTab === 'find' && allUsers.filter(u => u.userId !== currentUser.userId).map(u => (
-                             <div key={u.userId} className="community-list-item">
-                                <img src={u.photo || 'https://i.imgur.com/V4RclNb.png'} alt={u.name} />
-                                <span>{u.name} ({u.rollNumber})</span>
-                                {renderFriendStatusButton(u)}
                             </div>
                         ))}
                     </div>
                 </div>
                 <div className="community-main">
-                    {selectedFriend ? (
-                        <div className="chat-and-profile-layout">
-                            <div className="chat-view">
-                                <div className="interview-transcript">
-                                    {currentChatHistory.map((msg, index) => (
-                                        <div key={index} className={`chat-bubble ${msg.senderId === currentUser.userId ? 'user' : 'ai'}`}>
-                                            {msg.text}
-                                            <span className="chat-timestamp">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        </div>
-                                    ))}
-                                    <div ref={chatEndRef} />
-                                </div>
-                                <form onSubmit={(e) => { e.preventDefault(); onSendMessage(selectedFriendId, e.target.message.value); e.target.message.value = ''; }} className="chat-input-form">
-                                    <input name="message" type="text" placeholder={`Message ${selectedFriend.name}...`}/>
-                                    <button type="submit" className="btn btn-primary">Send</button>
-                                </form>
-                            </div>
-                            <div className="friend-profile-view">
-                                <OLQDashboard user={selectedFriend} calculateOLQScores={calculateOLQScores} isFriendView={true} />
-                            </div>
+                    {!selectedChat ? (
+                        <div className="card text-center" style={{height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                            <p>Select a friend to start chatting.</p>
                         </div>
                     ) : (
-                        <div className="card text-center" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-                            <p>Select a friend to start chatting and view their profile.</p>
+                        <div className="chat-and-profile-layout">
+                            <ChatView chatPartner={selectedChatPartner} chatHistory={chatHistory} />
+                            <div className="card friend-profile-view">
+                                {/* Placeholder for Friend Profile View */}
+                                <h2>{selectedChatPartner.name}</h2>
+                                <img src={selectedChatPartner.profilePic || DEFAULT_PROFILE_PIC} alt={selectedChatPartner.name} style={{width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', margin: '1rem auto', display: 'block'}}/>
+                                <p><strong>Roll No:</strong> {selectedChatPartner.rollNumber}</p>
+                                <p><strong>Score:</strong> {selectedChatPartner.score || 0}</p>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1585,131 +1617,77 @@ const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, c
         </div>
     );
 };
-
-const AdminPanel = ({ allData, onImportData }) => {
+const AdminPanel = ({ users, chats, onUpdateUser }) => {
     const [selectedUser, setSelectedUser] = useState(null);
-    const [activeTab, setActiveTab] = useState('profile');
-    const [selectedChat, setSelectedChat] = useState(null);
-    const importFileRef = useRef(null);
+    const [activeTab, setActiveTab] = useState('data'); // data, chats
+    const [selectedChatPartner, setSelectedChatPartner] = useState(null);
 
-    const usersMap = useMemo(() => {
-        const map = {};
-        allData.users.forEach(u => map[u.userId] = u.name);
-        return map;
-    }, [allData.users]);
-    
-    const userChats = useMemo(() => {
-        if (!selectedUser) return [];
-        return Object.entries(allData.chats)
-            .filter(([key]) => key.split('_').includes(selectedUser.userId))
-            .map(([key, messages]) => {
-                const otherUserId = key.split('_').find(id => id !== selectedUser.userId);
-                return { key, otherUserName: usersMap[otherUserId] || 'Unknown', messages };
-            });
-    }, [selectedUser, allData.chats, usersMap]);
-
-    const handleExportData = () => {
-        const jsonString = JSON.stringify(allData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'ssb_app_data.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    const handleImportClick = () => {
-        importFileRef.current.click();
-    };
-
-    const handleFileImport = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const importedData = JSON.parse(event.target.result as string);
-                    if (confirm('This will overwrite all current application data. Are you sure you want to continue?')) {
-                        onImportData(importedData);
-                    }
-                } catch (error) {
-                    alert('Invalid JSON file.');
-                }
-            };
-            reader.readAsText(file);
-        }
-    };
-    
-    const selectUser = (user) => {
+    const handleSelectUser = (user) => {
         setSelectedUser(user);
-        setActiveTab('profile');
-        setSelectedChat(null);
+        setSelectedChatPartner(null); // Reset chat selection when user changes
     };
 
+    const chatHistory = selectedUser && selectedChatPartner ? chats[`${[selectedUser.rollNumber, selectedChatPartner].sort().join('_')}`] || [] : [];
+    const chatPartners = selectedUser && chats ? Object.keys(chats)
+        .filter(key => key.includes(selectedUser.rollNumber))
+        .map(key => key.split('_').find(rn => rn !== selectedUser.rollNumber))
+        : [];
+        
     return (
         <div>
             <div className="page-header"><h1>Admin Panel</h1></div>
-            <div className="card" style={{marginBottom: 'var(--spacing-lg)'}}>
-                <h3>Data Management</h3>
-                <p>Export a full backup of the application data, or import a previous backup to restore the state.</p>
-                <div className="header-actions" style={{marginTop: 'var(--spacing-md)'}}>
-                    <button className="btn btn-primary" onClick={handleExportData}>Export All Data</button>
-                    <button className="btn btn-secondary" onClick={handleImportClick}>Import Data</button>
-                    <input type="file" ref={importFileRef} style={{display: 'none'}} accept=".json" onChange={handleFileImport} />
-                </div>
-            </div>
             <div className="admin-container">
                 <div className="admin-user-list">
-                    <h3>All Users ({allData.users.length})</h3>
+                    <h3>All Users ({users.length})</h3>
                     <ul>
-                        {allData.users.map(user => (
-                            <li key={user.userId} className={selectedUser?.userId === user.userId ? 'active' : ''} onClick={() => selectUser(user)}>
+                        {users.map(user => (
+                            <li key={user.rollNumber} onClick={() => handleSelectUser(user)} className={selectedUser?.rollNumber === user.rollNumber ? 'active' : ''}>
                                 {user.name} ({user.rollNumber})
                             </li>
                         ))}
                     </ul>
                 </div>
-                <div className="admin-user-details card">
-                    {selectedUser ? (
-                        <div>
+                <div className="card admin-user-details">
+                    {!selectedUser ? (
+                        <p>Select a user to view their details.</p>
+                    ) : (
+                        <>
                             <div className="community-tabs">
-                                <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>Profile Data</button>
-                                <button className={activeTab === 'chats' ? 'active' : ''} onClick={() => setActiveTab('chats')}>Friends & Chats</button>
+                                <button className={activeTab === 'data' ? 'active' : ''} onClick={() => setActiveTab('data')}>Full Data</button>
+                                <button className={activeTab === 'chats' ? 'active' : ''} onClick={() => setActiveTab('chats')}>View Chats</button>
                             </div>
                             <div className="admin-tab-content">
-                                {activeTab === 'profile' && <pre>{JSON.stringify(selectedUser, null, 2)}</pre>}
+                                {activeTab === 'data' && (
+                                    <>
+                                        <h2>Data for {selectedUser.name}</h2>
+                                        <pre>{JSON.stringify(selectedUser, null, 2)}</pre>
+                                    </>
+                                )}
                                 {activeTab === 'chats' && (
-                                    <div>
-                                        <h4>Friends:</h4>
-                                        <ul>{selectedUser.friends.map(id => <li key={id}>{usersMap[id] || id}</li>)}</ul>
-                                        <hr style={{margin: 'var(--spacing-lg) 0'}}/>
-                                        <h4>Chats:</h4>
+                                    <>
+                                        <h2>Chats for {selectedUser.name}</h2>
                                         <div className="admin-chat-selector">
-                                            {userChats.map(chat => (
-                                                <button key={chat.key} className={`btn btn-secondary ${selectedChat?.key === chat.key ? 'active' : ''}`} onClick={() => setSelectedChat(chat)}>
-                                                    Chat with {chat.otherUserName}
+                                            {chatPartners.map(chatPartnerRoll => (
+                                                <button key={chatPartnerRoll} className={`btn btn-secondary ${selectedChatPartner === chatPartnerRoll ? 'active' : ''}`} onClick={() => setSelectedChatPartner(chatPartnerRoll)}>
+                                                    Chat with {users.find(u => u.rollNumber === chatPartnerRoll)?.name || 'Unknown'}
                                                 </button>
                                             ))}
                                         </div>
-                                        {selectedChat && (
-                                            <div className="interview-transcript admin-chat-view">
-                                                {selectedChat.messages.map((msg, index) => (
-                                                    <div key={index} className={`chat-bubble ${msg.senderId === selectedUser.userId ? 'user' : 'ai'}`}>
-                                                        <strong>{usersMap[msg.senderId]}:</strong> {msg.text}
-                                                        <span className="chat-timestamp">{new Date(msg.timestamp).toLocaleString()}</span>
+                                        <div className="interview-transcript admin-chat-view">
+                                            {chatHistory.map((msg, index) => {
+                                                 const sender = users.find(u => u.rollNumber === msg.sender);
+                                                 return (
+                                                    <div key={index} className={`chat-bubble ${msg.sender === selectedUser.rollNumber ? 'user' : 'ai'}`}>
+                                                         <strong>{sender?.name || 'Unknown'}: </strong>{msg.text}
+                                                         {msg.timestamp && <span className="chat-timestamp">{new Date(msg.timestamp).toLocaleString()}</span>}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
+                                                 );
+                                            })}
+                                        </div>
+                                    </>
                                 )}
                             </div>
-                        </div>
-                    ) : (
-                        <p>Select a user to view their full data.</p>
+                        </>
                     )}
                 </div>
             </div>
@@ -1717,361 +1695,386 @@ const AdminPanel = ({ allData, onImportData }) => {
     );
 };
 
-// --- MAIN APP ---
-const App = () => {
-    const [appData, setAppData] = useState(null); // Start with null, data will come from Firebase
-    const [currentUser, setCurrentUser] = useState(null);
-    const [view, setView] = useState('dashboard');
-    const [viewedFeedback, setViewedFeedback] = useState(null);
-    const [activeModal, setActiveModal] = useState(null);
-    const [isInterviewing, setIsInterviewing] = useState(false);
-    const [dailyBriefing, setDailyBriefing] = useState({ briefing: null, isLoading: false });
 
-    // Effect to listen for real-time updates from Firebase
+
+// --- MAIN APP COMPONENT ---
+const App = () => {
+    const [appData, setAppData] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [currentPage, setCurrentPage] = useState('dashboard');
+    const [currentTest, setCurrentTest] = useState(null);
+    const [currentModal, setCurrentModal] = useState(null);
+    const [modalData, setModalData] = useState(null);
+    const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+    const [currentAffairsData, setCurrentAffairsData] = useState({ briefing: null, isLoading: false });
+
     useEffect(() => {
         const unsubscribe = db.listen(setAppData);
-        return () => unsubscribe(); // Cleanup listener on unmount
+        return () => unsubscribe();
     }, []);
-
-    // Effect to sync currentUser state when appData changes from Firebase
-    useEffect(() => {
-        if (currentUser?.userId && appData?.users) {
-            const userInDb = appData.users.find(u => u.userId === currentUser.userId);
-            if (userInDb) {
-                // Prevent re-renders if the object hasn't changed.
-                if (JSON.stringify(currentUser) !== JSON.stringify(userInDb)) {
-                    setCurrentUser(userInDb);
-                }
-            } else {
-                // User was deleted from DB, log them out.
-                setCurrentUser(null);
-            }
-        }
-    }, [appData, currentUser?.userId]);
-
-
-    // Central function to update data. It updates the central DB,
-    // and the listener will propagate changes to all clients.
-    const updateAppData = (updater) => {
-        const newData = updater(appData);
-        db.save(newData); // Save the new state to Firebase
-    };
-
-    const checkAndAwardBadges = (user) => {
-        const testResults = user.testResults || {};
-        let newBadges = [];
-        
-        // FIX: Add Array.isArray check to prevent error on 'length' property of 'unknown' type.
-        if (Object.values(testResults).some(arr => Array.isArray(arr) && arr.length > 0)) newBadges.push('first_step');
-        if (testResults.TAT?.length > 0 && testResults.WAT?.length > 0 && testResults.SRT?.length > 0 && testResults.SDT?.length > 0) newBadges.push('psych_initiate');
-        if (testResults.TAT?.length >= 5) newBadges.push('story_weaver');
-        if (testResults.WAT?.length >= 5) newBadges.push('word_warrior');
-        if (testResults.Lecturerette?.length >= 1) newBadges.push('orator_apprentice');
-        if (testResults.Interview?.length >= 1) newBadges.push('interviewer_ace');
-
-        const allNewBadges = [...new Set([...(user.unlockedBadges || []), ...newBadges])];
-        return {...user, unlockedBadges: allNewBadges };
-    };
     
-    const calculateOLQScores = useCallback((user) => {
-        const scores: { [key: string]: number } = {};
-        OLQ_LIST.forEach(olq => scores[olq] = 0);
-        if (!user || !user.testResults) return scores;
-        
-        Object.values(user.testResults).forEach(resultsArray => {
-            if (Array.isArray(resultsArray)) {
-                resultsArray.forEach(result => {
-                    if (result.feedback && Array.isArray(result.feedback.olqs_demonstrated)) {
-                        result.feedback.olqs_demonstrated.forEach(olq => {
-                            if (scores[olq] !== undefined) scores[olq]++;
-                        });
-                    }
-                });
-            }
-        });
-        return scores;
-    }, []);
+    // Derived state, memoized for performance
+    const users = useMemo(() => appData?.users || [], [appData]);
+    const chats = useMemo(() => appData?.chats || {}, [appData]);
+    // FIX: Provide fallbacks for content arrays to prevent crashes if they are missing from the database.
+    const content = useMemo(() => ({
+        tat_images: appData?.content?.tat_images || [],
+        wat_words: appData?.content?.wat_words || [],
+        srt_scenarios: appData?.content?.srt_scenarios || [],
+        lecturerette_topics: appData?.content?.lecturerette_topics || [],
+    }), [appData]);
+    
+    // Find current user object from appData whenever it changes
+    useEffect(() => {
+        if(appData && currentUser) {
+            setCurrentUser(appData.users.find(u => u.rollNumber === currentUser.rollNumber));
+        }
+    }, [appData]);
 
     const handleLogin = (name, rollNumber) => {
-        let user;
-        const users = appData?.users || [];
         const existingUser = users.find(u => u.rollNumber === rollNumber);
-        
-        if (!existingUser) {
-            user = { 
-                name, 
+        if (existingUser) {
+            setCurrentUser(existingUser);
+        } else {
+            const newUser = {
+                name,
                 rollNumber,
-                userId: rollNumber,
-                testResults: {}, 
-                score: 0, 
-                piqData: {}, 
-                persona: 'psychologist', 
-                unlockedBadges: [],
-                photo: null,
-                bio: '',
-                friends: [],
-                friendRequests: [],
-            };
-            updateAppData(data => ({ ...data, users: [...(data?.users || []), user] }));
-        } else {
-             // Ensure older user objects have new properties and update name by spreading over a default structure.
-            user = { 
-                testResults: {},
-                score: 0,
-                piqData: {},
+                profilePic: DEFAULT_PROFILE_PIC,
                 persona: 'psychologist',
+                joinDate: new Date().toISOString(),
+                testResults: {},
                 unlockedBadges: [],
-                photo: null,
-                bio: '',
-                friends: [],
-                friendRequests: [],
-                ...existingUser,
-                name, // Allow name update on login
-                userId: existingUser.userId || rollNumber,
+                piqData: {},
+                score: 0,
             };
-            updateAppData(data => ({ ...data, users: (data?.users || []).map(u => u.userId === user.userId ? user : u) }));
+            const updatedUsers = [...users, newUser];
+            setAppData(prev => ({...prev, users: updatedUsers}));
+            db.save({...appData, users: updatedUsers});
+            setCurrentUser(newUser);
         }
-        setCurrentUser(user);
+    };
+    
+    const handleLogout = () => {
+        setCurrentUser(null);
+        setCurrentPage('dashboard');
     };
 
-    const updateCurrentUser = (userUpdater) => {
-        updateAppData(data => {
-            const users = data.users.map(u => {
-                if (u.userId === currentUser.userId) {
-                    return userUpdater(u);
-                }
-                return u;
-            });
-            return { ...data, users };
+    const updateUser = useCallback((updatedData) => {
+        if (!currentUser) return;
+        setAppData(prev => {
+            const newAppData = { ...prev };
+            const userIndex = newAppData.users.findIndex(u => u.rollNumber === currentUser.rollNumber);
+            if (userIndex !== -1) {
+                newAppData.users[userIndex] = { ...newAppData.users[userIndex], ...updatedData };
+                setCurrentUser(newAppData.users[userIndex]);
+                db.save(newAppData);
+            }
+            return newAppData;
         });
-    };
-    
-    const handleLogout = () => setCurrentUser(null);
-    
-    const handleTestComplete = async (testType, data) => {
-        setView('dashboard');
+    }, [currentUser]);
+
+    const calculateUserScore = (user) => {
+        let totalScore = 0;
+        let testCount = 0;
+        if (!user || !user.testResults) return 0;
         
-        let feedback = null;
-        let score_gain = 0;
-        let payload = {};
-
-        if (testType === 'OIR') {
-            const { score } = data;
-            score_gain = score * 2;
-            payload = { responses: data.answers, score, feedback: null };
-        } else {
-            setViewedFeedback({ isLoading: true });
-            let dataPayload;
-            if (testType === 'GPE') dataPayload = { scenario: GPE_SCENARIOS_DEFAULT[0], plan: data };
-            else if (testType === 'Lecturerette') dataPayload = { transcript: data };
-            else dataPayload = { responses: data };
-            
-            feedback = await getAIAssessment(testType, dataPayload, currentUser.persona);
-            setViewedFeedback(feedback);
-            score_gain = feedback.olqs_demonstrated?.length * 10 || 0;
-            payload = { responses: data, feedback, score: score_gain };
-        }
-
-        updateCurrentUser(prevUser => {
-            const newTestResults = { ...prevUser.testResults };
-            if (!newTestResults[testType]) newTestResults[testType] = [];
-            newTestResults[testType].push({ ...payload, date: new Date().toISOString() });
-            const userWithNewScore = { ...prevUser, testResults: newTestResults, score: (prevUser.score || 0) + score_gain };
-            return checkAndAwardBadges(userWithNewScore);
-        });
-    };
-    
-    const handleInterviewComplete = async (transcript) => {
-        setIsInterviewing(false);
-        setView('interview');
-        if (transcript.length <= 1) return;
-
-        setViewedFeedback({ isLoading: true });
-        const aiFeedback = await getAIAssessment('Interview', { piqData: currentUser.piqData, transcript }, currentUser.persona);
-        setViewedFeedback(aiFeedback);
-
-        updateCurrentUser(prevUser => {
-            const newTestResults = { ...prevUser.testResults };
-            if (!newTestResults['Interview']) newTestResults['Interview'] = [];
-            const score_gain = aiFeedback.olqs_demonstrated?.length * 10 || 0;
-            newTestResults['Interview'].push({ transcript, feedback: aiFeedback, score: score_gain, date: new Date().toISOString() });
-            const userWithNewScore = { ...prevUser, testResults: newTestResults, score: (prevUser.score || 0) + score_gain };
-            return checkAndAwardBadges(userWithNewScore);
-        });
-    };
-    
-    const handleFriendAction = (action, targetUserId) => {
-        const currentUserId = currentUser.userId;
-        updateAppData(data => {
-            let newUsers = [...data.users];
-            const currentUserIndex = newUsers.findIndex(u => u.userId === currentUserId);
-            const targetUserIndex = newUsers.findIndex(u => u.userId === targetUserId);
-            if (currentUserIndex === -1 || targetUserIndex === -1) return data;
-    
-            // Ensure friend/request arrays exist before modification to prevent crashes
-            let updatedCurrentUser = { ...newUsers[currentUserIndex], friends: newUsers[currentUserIndex].friends || [], friendRequests: newUsers[currentUserIndex].friendRequests || [] };
-            let updatedTargetUser = { ...newUsers[targetUserIndex], friends: newUsers[targetUserIndex].friends || [], friendRequests: newUsers[targetUserIndex].friendRequests || [] };
-    
-            if (action === 'add') {
-                if (!updatedTargetUser.friendRequests.includes(currentUserId) && !updatedTargetUser.friends.includes(currentUserId)) {
-                    updatedTargetUser.friendRequests = [...updatedTargetUser.friendRequests, currentUserId];
+        Object.values(user.testResults).forEach((results: any[]) => {
+            results.forEach(result => {
+                if (typeof result.score === 'number' && !isNaN(result.score)) {
+                    totalScore += result.score;
+                    testCount++;
                 }
-            } else if (action === 'accept') {
-                updatedCurrentUser.friends = [...updatedCurrentUser.friends, targetUserId];
-                updatedCurrentUser.friendRequests = updatedCurrentUser.friendRequests.filter(id => id !== targetUserId);
-                updatedTargetUser.friends = [...updatedTargetUser.friends, currentUserId];
-            } else if (action === 'decline') {
-                updatedCurrentUser.friendRequests = updatedCurrentUser.friendRequests.filter(id => id !== targetUserId);
-            }
-    
-            newUsers[currentUserIndex] = updatedCurrentUser;
-            newUsers[targetUserIndex] = updatedTargetUser;
-            return { ...data, users: newUsers };
+            });
         });
-    };
-    
-    const handleSendMessage = (recipientId, text) => {
-        if (!text.trim()) return;
-        const chatKey = [currentUser.userId, recipientId].sort().join('_');
-        const newMessage = { senderId: currentUser.userId, text, timestamp: new Date().toISOString() };
-        updateAppData(data => {
-            const updatedChats = { ...data.chats };
-            if (!updatedChats[chatKey]) updatedChats[chatKey] = [];
-            updatedChats[chatKey].push(newMessage);
-            return { ...data, chats: updatedChats };
-        });
+
+        return testCount > 0 ? Math.round(totalScore / testCount) : 0;
     };
 
-    const handleGeneratePhoto = async () => {
-        try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
-                contents: { parts: [{ text: 'A professional headshot of a young, aspiring military officer from India, looking determined and confident. Dressed in formal attire. Neutral background.' }] },
-                config: { responseModalities: [Modality.IMAGE] }
-            });
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
-            }
-            return null;
-        } catch (error) {
-            console.error("AI photo generation failed:", error);
-            alert("Failed to generate photo. Please try again.");
-            return null;
+    const checkAndAwardBadges = (user, testType, testResults) => {
+        let newBadges = [];
+        const {unlockedBadges = [], testResults: allResults = {}} = user;
+
+        if (!unlockedBadges.includes('first_step')) newBadges.push('first_step');
+
+        const completedPsychTests = ['TAT', 'WAT', 'SRT', 'SDT'].filter(t => allResults[t]?.length > 0);
+        if (completedPsychTests.length === 4 && !unlockedBadges.includes('psych_initiate')) newBadges.push('psych_initiate');
+
+        if (allResults.TAT?.length >= 5 && !unlockedBadges.includes('story_weaver')) newBadges.push('story_weaver');
+        if (allResults.WAT?.length >= 5 && !unlockedBadges.includes('word_warrior')) newBadges.push('word_warrior');
+        if (testType === 'Lecturerette' && !unlockedBadges.includes('orator_apprentice')) newBadges.push('orator_apprentice');
+        if (testType === 'Interview' && !unlockedBadges.includes('interviewer_ace')) newBadges.push('interviewer_ace');
+
+        if (newBadges.length > 0) {
+            updateUser({ unlockedBadges: [...unlockedBadges, ...newBadges] });
         }
+    };
+    
+    const handleCompleteTest = async (testType, data) => {
+        setCurrentTest(null);
+        setCurrentPage('dashboard');
+        
+        const result = {
+            date: new Date().toISOString(),
+            ...data
+        };
+        
+        const existingResults = currentUser.testResults?.[testType] || [];
+        const newResults = [...existingResults, result];
+        const updatedTestResults = {...currentUser.testResults, [testType]: newResults};
+
+        updateUser({ testResults: updatedTestResults });
+
+        setIsFeedbackLoading(true);
+        setCurrentModal('ViewFeedback');
+        setModalData({ isLoading: true });
+
+        const feedback = await getAIAssessment(testType, data, currentUser.persona);
+        
+        const latestUser = appData.users.find(u => u.rollNumber === currentUser.rollNumber);
+        
+        // FIX: Add a guard clause to prevent crash if user is not found after async operation.
+        if (!latestUser) {
+            console.error("User not found after AI feedback generation. Aborting test completion.");
+            setModalData({ error: "Your user data could not be found after the test. Please check your results on the dashboard." });
+            setIsFeedbackLoading(false);
+            return;
+        }
+
+        // FIX: Safely access test results to prevent crashes.
+        const testResultsForType = latestUser.testResults?.[testType] || [];
+        const finalResultsForTest = testResultsForType.map(r => r.date === result.date ? { ...r, feedback } : r);
+        const finalTestResults = { ...(latestUser.testResults || {}), [testType]: finalResultsForTest };
+        
+        const updatedUserWithFeedback = { ...latestUser, testResults: finalTestResults };
+        const score = calculateUserScore(updatedUserWithFeedback);
+        checkAndAwardBadges(updatedUserWithFeedback, testType, finalTestResults);
+        
+        updateUser({ testResults: finalTestResults, score });
+
+        setModalData(feedback);
+        setIsFeedbackLoading(false);
+    };
+    
+     const calculateOLQScores = (user) => {
+        // FIX: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+        // Explicitly cast the initial value of the reduce function to ensure olqCounts is correctly typed.
+        const olqCounts = OLQ_LIST.reduce((acc, olq) => ({ ...acc, [olq]: 0 }), {} as Record<string, number>);
+        if (!user || !user.testResults) return olqCounts;
+
+        Object.values(user.testResults).forEach((results: any[]) => {
+            results.forEach(result => {
+                if (result.feedback && Array.isArray(result.feedback.olqs_demonstrated)) {
+                    result.feedback.olqs_demonstrated.forEach(olq => {
+                        if (olqCounts[olq] !== undefined) {
+                            olqCounts[olq]++;
+                        }
+                    });
+                }
+            });
+        });
+
+        const maxCount = Math.max(1, ...Object.values(olqCounts));
+        
+        const normalizedScores = OLQ_LIST.reduce((acc, olq) => ({
+            ...acc,
+            [olq]: olqCounts[olq] / maxCount
+        }), {} as Record<string, number>);
+        
+        return normalizedScores;
+    };
+    
+    const handleUpdateContent = (type, newContent) => {
+        const newAppData = { ...appData, content: { ...appData.content, [type]: newContent }};
+        setAppData(newAppData);
+        db.save(newAppData);
+    };
+
+    const handleManageContent = (type) => {
+        setCurrentModal(`Manage${type}`);
     };
     
     const handleGetBriefing = async () => {
-        setDailyBriefing({ briefing: null, isLoading: true });
-        const prompt = `Generate 5 top national and international news headlines from today, relevant for a military aspirant in India. For each, provide a 2-3 sentence summary. Then, create a 5-question multiple-choice quiz based ONLY on these summaries. Return a valid JSON object with the schema: { "summaries": [{ "headline": "string", "summary": "string" }], "quiz": [{ "question": "string", "options": ["string", "string", "string", "string"], "answer": "string" }] }`;
+        setCurrentAffairsData({ briefing: null, isLoading: true });
+        const prompt = `Provide a current affairs briefing for today. The response must be a single JSON object inside a markdown code block. The JSON object should contain: 1. A "summaries" key with an array of 5 objects, each with a "headline" and a short "summary" of a major national or international news story. 2. A "quiz" key with an array of 5 multiple-choice questions based on these summaries. Each question object should have a "question", an array of 4 "options", and the correct "answer" string.`;
         try {
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: "application/json" } });
-            const data = JSON.parse(response.text);
-            setDailyBriefing({ briefing: data, isLoading: false });
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+                config: {
+                    tools: [{ googleSearch: {} }],
+                },
+            });
+            const jsonString = response.text.match(/```json\n([\s\S]*?)\n```/)?.[1];
+            if (jsonString) {
+                const parsedData = JSON.parse(jsonString);
+                setCurrentAffairsData({ briefing: parsedData, isLoading: false });
+            } else {
+                throw new Error("Failed to parse JSON from AI response.");
+            }
         } catch (error) {
-            console.error("Failed to fetch daily briefing:", error);
-            alert("Could not fetch today's briefing. Please try again.");
-            setDailyBriefing({ briefing: null, isLoading: false });
+            console.error("Current affairs briefing error:", error);
+            setCurrentAffairsData({ briefing: null, isLoading: false });
+            alert("Failed to fetch news. Please try again.");
         }
     };
+    
+    const handleSavePiq = (piqData) => updateUser({ piqData });
 
-    const handleProfileUpdate = (profileData) => updateCurrentUser(prev => ({...prev, ...profileData}));
-    const handleSavePiq = (piqData) => updateCurrentUser(prev => ({...prev, piqData}));
-    const handlePersonaChange = (persona) => updateCurrentUser(prev => ({...prev, persona}));
-    const handleManage = (modalType, data = null) => { if (modalType === 'ViewFeedback') setViewedFeedback(data); else setActiveModal(modalType); };
-    
-    const handleContentChange = (type, action, value) => {
-        updateAppData((data) => {
-            const content = { ...data.content };
-            const keyMap = { 'TAT': 'tat_images', 'WAT': 'wat_words', 'SRT': 'srt_scenarios', 'Lecturerette': 'lecturerette_topics' };
-            const key = keyMap[type];
-            if (!key) return data;
-    
-            if (action === 'add') content[key] = [...content[key], value];
-            else if (action === 'addMultiple') content[key] = [...content[key], ...value];
-            else if (action === 'remove') content[key] = content[key].filter((_, idx) => value !== idx);
-    
-            return { ...data, content };
+    const handleInterviewComplete = (transcript) => {
+         handleCompleteTest('Interview', {
+            transcript,
+            piqData: currentUser.piqData,
+            score: 0 // Placeholder, will be updated by feedback
         });
     };
     
-    // Show loading spinner while waiting for data from Firebase
-    if (!appData) {
-        return (
-            <div className="app-loading-screen">
-                <div className="loading-spinner"></div>
-                <h2>Connecting to the Cloud...</h2>
-            </div>
-        );
-    }
-    
-    if (!currentUser) return <LoginPage onLogin={handleLogin} />;
-    if (isInterviewing) return <VoiceInterviewSimulator piqData={currentUser.piqData} onComplete={handleInterviewComplete}/>;
-
-    const renderView = () => {
-        switch (view) {
-            case 'dashboard': return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
-            case 'profile': return <ProfilePage user={currentUser} onUpdate={handleProfileUpdate} onGeneratePhoto={handleGeneratePhoto} />;
-            case 'community': return <CommunityPage currentUser={currentUser} allUsers={appData.users || []} onFriendAction={handleFriendAction} onSendMessage={handleSendMessage} chats={appData.chats || {}} calculateOLQScores={calculateOLQScores} />;
-            case 'captain nox': return <CaptainNox user={currentUser} calculateOLQScores={calculateOLQScores} />;
-            case 'olq dashboard': return <OLQDashboard user={currentUser} calculateOLQScores={calculateOLQScores} />;
-            case 'current affairs': return <CurrentAffairsView onGetBriefing={handleGetBriefing} briefingData={dailyBriefing} />;
-            case 'topic briefer': return <TopicBrieferView />;
-            case 'oir': return <OIRTestRunner questions={OIR_QUESTIONS_DEFAULT} onComplete={(score, answers) => handleTestComplete('OIR', {score, answers})} />;
-            case 'gpe': return <GPEView scenario={GPE_SCENARIOS_DEFAULT[0]} onComplete={(plan) => handleTestComplete('GPE', plan)} />;
-            case 'tat': return <TestRunner testType="TAT" data={appData.content.tat_images} timeLimit={240} onComplete={(r) => handleTestComplete('TAT', r)} />;
-            case 'wat': return <TestRunner testType="WAT" data={appData.content.wat_words} timeLimit={15} onComplete={(r) => handleTestComplete('WAT', r)} />;
-            case 'srt': return <TestRunner testType="SRT" data={appData.content.srt_scenarios} timeLimit={30} onComplete={(r) => handleTestComplete('SRT', r)} />;
-            case 'sdt': return <SDTView onComplete={(r) => handleTestComplete('SDT', r)} />;
-            case 'lecturerette': return <LectureretteView topics={appData.content.lecturerette_topics} onComplete={(r) => handleTestComplete('Lecturerette', r)} />;
-            case 'leaderboard': return <Leaderboard users={appData.users || []}/>;
-            case 'interview': return <InterviewPage user={currentUser} onSavePiq={handleSavePiq} onStartInterview={() => setIsInterviewing(true)} onViewFeedback={fb => setViewedFeedback(fb)} />;
-            case 'admin panel': return <AdminPanel allData={{...appData, users: appData.users || [], chats: appData.chats || {}}} onImportData={(data) => db.save(data)} />;
-            default: return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
+    const handleSendMessage = (senderRoll, receiverRoll, message) => {
+        const chatKey = [senderRoll, receiverRoll].sort().join('_');
+        const newAppData = { ...appData };
+        if (!newAppData.chats[chatKey]) {
+            newAppData.chats[chatKey] = [];
         }
+        newAppData.chats[chatKey].push(message);
+        setAppData(newAppData);
+        db.save(newAppData);
     };
 
-    let navLinks = [
-      'dashboard', 'profile', 'olq dashboard', 'community', 'captain nox', 'current affairs', 'topic briefer', '|', 'oir', 'gpe', 'tat', 'wat', 'srt', 'sdt', 'lecturerette', 'interview', '|', 'leaderboard'
-    ];
+    const renderPage = () => {
+        if (currentTest) {
+            switch(currentTest.type) {
+                case 'TAT': return <TestRunner testType="TAT" data={content.tat_images} timeLimit={270} onComplete={(responses) => handleCompleteTest('TAT', { responses, score: 0 })} />;
+                case 'WAT': return <TestRunner testType="WAT" data={content.wat_words} timeLimit={15} onComplete={(responses) => handleCompleteTest('WAT', { responses, score: 0 })} />;
+                case 'SRT': return <TestRunner testType="SRT" data={content.srt_scenarios} timeLimit={30} onComplete={(responses) => handleCompleteTest('SRT', { responses, score: 0 })} />;
+                case 'SDT': return <SDTView onComplete={(responses) => handleCompleteTest('SDT', { responses, score: 0 })} />;
+                case 'Lecturerette': return <LectureretteView topics={content.lecturerette_topics} onComplete={(transcript) => handleCompleteTest('Lecturerette', { transcript, score: 0 })} />;
+                case 'OIR': return <OIRTestRunner questions={OIR_QUESTIONS_DEFAULT} onComplete={(score, answers) => handleCompleteTest('OIR', { score, answers })} />;
+                case 'GPE': return <GPEView scenario={GPE_SCENARIOS_DEFAULT[0]} onComplete={(plan) => handleCompleteTest('GPE', { plan, scenario: GPE_SCENARIOS_DEFAULT[0], score: 0 })} />;
+                case 'Interview': return <VoiceInterviewSimulator piqData={currentUser.piqData} onComplete={handleInterviewComplete} />;
+            }
+        }
+
+        switch(currentPage) {
+            case 'dashboard': return <Dashboard user={currentUser} onManage={handleManageContent} onNavigate={setCurrentPage} onPersonaChange={(persona) => updateUser({ persona })} />;
+            case 'leaderboard': return <Leaderboard users={users} />;
+            case 'profile': return <ProfilePage user={currentUser} onUpdateUser={updateUser} />;
+            case 'interview': return <InterviewPage user={currentUser} onSavePiq={handleSavePiq} onStartInterview={() => setCurrentTest({ type: 'Interview' })} onViewFeedback={(fb) => { setCurrentModal('ViewFeedback'); setModalData(fb); }}/>;
+            case 'captain nox': return <CaptainNox user={currentUser} calculateOLQScores={calculateOLQScores} />;
+            case 'olq dashboard': return <OLQDashboard user={currentUser} calculateOLQScores={calculateOLQScores} />;
+            case 'current affairs': return <CurrentAffairsView onGetBriefing={handleGetBriefing} briefingData={currentAffairsData} />;
+            case 'topic briefer': return <TopicBrieferView />;
+            case 'community': return <CommunityPage user={currentUser} users={users} chats={chats} onSendMessage={handleSendMessage} />;
+            case 'admin': return <AdminPanel users={users} chats={chats} onUpdateUser={()=>{}} />;
+            
+            // Test start pages
+            case 'tat':
+            case 'wat':
+            case 'srt':
+            case 'sdt':
+            case 'oir':
+            case 'gpe':
+            case 'lecturerette':
+                return (
+                    <div className="card text-center">
+                        <h2>{currentPage.toUpperCase()} Test</h2>
+                        <p>Ready to begin?</p>
+                        <button className="btn btn-primary" onClick={() => setCurrentTest({ type: currentPage.toUpperCase() })}>Start Test</button>
+                    </div>
+                );
+            default: return <Dashboard user={currentUser} onManage={handleManageContent} onNavigate={setCurrentPage} onPersonaChange={(persona) => updateUser({ persona })} />;
+        }
+    };
     
-    if (currentUser && currentUser.rollNumber === 'ADMIN_001') {
-        navLinks.push('|', 'admin panel');
+    const renderModal = () => {
+        switch(currentModal) {
+            case 'ViewFeedback': return <FeedbackModal feedback={modalData} onClose={() => setCurrentModal(null)} />;
+            case 'ManageTAT': return <ManageTatModal images={content.tat_images} onClose={() => setCurrentModal(null)} onAdd={(url) => handleUpdateContent('tat_images', [...content.tat_images, url])} onRemove={(index) => handleUpdateContent('tat_images', content.tat_images.filter((_, i) => i !== index))} />;
+            case 'ManageWAT': return <ManageContentModal title="Manage WAT Words" items={content.wat_words} type="WAT" onClose={() => setCurrentModal(null)} onAdd={(item) => handleUpdateContent('wat_words', [...content.wat_words, item])} onRemove={(index) => handleUpdateContent('wat_words', content.wat_words.filter((_, i) => i !== index))} onAddMultiple={(items) => handleUpdateContent('wat_words', [...content.wat_words, ...items])} />;
+            case 'ManageSRT': return <ManageContentModal title="Manage SRT Scenarios" items={content.srt_scenarios} type="SRT" onClose={() => setCurrentModal(null)} onAdd={(item) => handleUpdateContent('srt_scenarios', [...content.srt_scenarios, item])} onRemove={(index) => handleUpdateContent('srt_scenarios', content.srt_scenarios.filter((_, i) => i !== index))} onAddMultiple={(items) => handleUpdateContent('srt_scenarios', [...content.srt_scenarios, ...items])} />;
+            case 'ManageLecturerette': return <ManageContentModal title="Manage Lecturerette Topics" items={content.lecturerette_topics} type="Lecturerette" onClose={() => setCurrentModal(null)} onAdd={(item) => handleUpdateContent('lecturerette_topics', [...content.lecturerette_topics, item])} onRemove={(index) => handleUpdateContent('lecturerette_topics', content.lecturerette_topics.filter((_, i) => i !== index))} onAddMultiple={(items) => handleUpdateContent('lecturerette_topics', [...content.lecturerette_topics, ...items])} />;
+            default: return null;
+        }
+    };
+    
+    if (!appData) {
+        return <div className="app-loading-screen"><div className="loading-spinner"></div><h2>Initializing NOX...</h2></div>;
     }
 
+    if (!currentUser) {
+        return <LoginPage onLogin={handleLogin} />;
+    }
+    
+    const navLinks = [
+        { id: 'dashboard', name: 'Dashboard' },
+        { id: 'psychology', name: 'Psychology Tests', children: [
+            { id: 'tat', name: 'TAT' },
+            { id: 'wat', name: 'WAT' },
+            { id: 'srt', name: 'SRT' },
+            { id: 'sdt', name: 'SDT' },
+        ]},
+        { id: 'gto', name: 'GTO Tasks', children: [
+            { id: 'gpe', name: 'GPE' },
+            { id: 'lecturerette', name: 'Lecturerette' },
+        ]},
+        { id: 'interview', name: 'Interview' },
+        { id: 'oir', name: 'OIR Test' },
+        { id: 'knowledge', name: 'Knowledge Base', children: [
+            { id: 'current affairs', name: 'Current Affairs' },
+            { id: 'topic briefer', name: 'Topic Briefer' },
+        ]},
+        { id: 'leaderboard', name: 'Leaderboard' },
+        { id: 'community', name: 'Community Hub' },
+    ];
+    
     return (
-        <>
-            <div className="app-layout">
-                <aside className="sidebar">
-                    <div className="sidebar-header">NOX SSB Prep</div>
-                    <nav className="sidebar-nav">
-                        <ul>
-                            {navLinks.map((v, i) => {
-                                if (v === '|') return <hr key={i} style={{border: 'none', borderTop: '1px solid var(--primary-light)', margin: 'var(--spacing-md) 0'}}/>;
-                                return <li key={v}><a href="#" className={view === v ? 'active' : ''} onClick={() => setView(v)}>
-                                    {v.charAt(0).toUpperCase() + v.slice(1).replace(' nox', ' Nox').replace('olq', 'OLQ')}
-                                    {v === 'community' && currentUser.friendRequests?.length > 0 && <span className="notification-badge">{currentUser.friendRequests.length}</span>}
-                                    </a></li>
-                            })}
-                        </ul>
-                    </nav>
-                    <div className="sidebar-footer">
-                        <div className="sidebar-user-info">
-                            <img src={currentUser.photo || 'https://i.imgur.com/V4RclNb.png'} alt="User" className="sidebar-profile-pic"/>
-                            <div>
-                                <p>Logged in as:<br/><strong>{currentUser.name}</strong><br/>({currentUser.rollNumber})</p>
-                            </div>
+        <div className="app-layout">
+            <nav className="sidebar">
+                <div className="sidebar-header">NOX</div>
+                <div className="sidebar-nav">
+                    <ul>
+                        {navLinks.map(link => (
+                            <li key={link.id}>
+                                <a href="#" onClick={(e) => { e.preventDefault(); if(!link.children) {setCurrentPage(link.id); setCurrentTest(null);}}} className={currentPage === link.id ? 'active' : ''}>
+                                    {link.name}
+                                </a>
+                                {link.children && (
+                                    <ul>
+                                        {link.children.map(child => (
+                                            <li key={child.id}>
+                                                <a href="#" onClick={(e) => {e.preventDefault(); setCurrentPage(child.id); setCurrentTest(null);}} className={currentPage === child.id ? 'active' : ''}>
+                                                    {child.name}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </li>
+                        ))}
+                         {/* Admin Link - Rendered conditionally */}
+                        {currentUser.rollNumber === "1" && (
+                            <li>
+                                <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage('admin'); }} className={currentPage === 'admin' ? 'active' : ''}>
+                                    Admin Panel
+                                </a>
+                            </li>
+                        )}
+                    </ul>
+                </div>
+                <div className="sidebar-footer">
+                    <div className="sidebar-user-info">
+                         <img src={currentUser.profilePic || DEFAULT_PROFILE_PIC} alt="Profile" className="sidebar-profile-pic" onClick={() => setCurrentPage('profile')} style={{cursor: 'pointer'}} />
+                        <div>
+                            <p><strong>{currentUser.name}</strong></p>
+                            <p>Roll: {currentUser.rollNumber}</p>
                         </div>
-                        <button onClick={handleLogout}>Logout</button>
                     </div>
-                </aside>
-                <main className="main-content">{renderView()}</main>
-            </div>
-            <FeedbackModal feedback={viewedFeedback} onClose={() => setViewedFeedback(null)} />
-            {activeModal === 'TAT' && <ManageTatModal images={appData.content.tat_images} onAdd={(url) => handleContentChange('TAT', 'add', url)} onAddMultiple={(urls) => handleContentChange('TAT', 'addMultiple', urls)} onRemove={(index) => handleContentChange('TAT', 'remove', index)} onClose={() => setActiveModal(null)} />}
-            {activeModal === 'WAT' && <ManageContentModal title="Manage WAT Words" items={appData.content.wat_words} onAdd={(word) => handleContentChange('WAT', 'add', word)} onAddMultiple={(words) => handleContentChange('WAT', 'addMultiple', words)} onRemove={(index) => handleContentChange('WAT', 'remove', index)} onClose={() => setActiveModal(null)} type="WAT" />}
-            {activeModal === 'SRT' && <ManageContentModal title="Manage SRT Scenarios" items={appData.content.srt_scenarios} onAdd={(scenario) => handleContentChange('SRT', 'add', scenario)} onAddMultiple={(scenarios) => handleContentChange('SRT', 'addMultiple', scenarios)} onRemove={(index) => handleContentChange('SRT', 'remove', index)} onClose={() => setActiveModal(null)} type="SRT" />}
-            {activeModal === 'Lecturerette' && <ManageContentModal title="Manage Lecturerette Topics" items={appData.content.lecturerette_topics} onAdd={(topic) => handleContentChange('Lecturerette', 'add', topic)} onAddMultiple={(topics) => handleContentChange('Lecturerette', 'addMultiple', topics)} onRemove={(index) => handleContentChange('Lecturerette', 'remove', index)} onClose={() => setActiveModal(null)} type="Lecturerette" />}
-        </>
+                    <button onClick={handleLogout} className="btn-danger">Logout</button>
+                </div>
+            </nav>
+            <main className="main-content">
+                {renderPage()}
+            </main>
+            {renderModal()}
+        </div>
     );
 };
 

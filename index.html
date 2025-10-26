@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -724,6 +725,13 @@
         background-color: var(--primary-dark);
         margin-bottom: var(--spacing-sm);
     }
+    .content-list-item-empty {
+        text-align: center;
+        color: var(--neutral-light);
+        padding: var(--spacing-xl);
+        border: 1px dashed var(--primary-light);
+        border-radius: var(--border-radius);
+    }
     .image-preview {
         width: 100px;
         height: 60px;
@@ -852,23 +860,27 @@
         background-color: var(--primary-light);
         color: var(--text-light);
         align-self: flex-start;
-        border-bottom-left-radius: var(--spacing-sm);
+        border-bottom-left-radius: 4px;
     }
     .chat-bubble.user {
         background-color: var(--accent-color);
         color: var(--primary-dark);
         align-self: flex-end;
-        border-bottom-right-radius: var(--spacing-sm);
+        border-bottom-right-radius: 4px;
     }
     .chat-timestamp {
         display: block;
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         color: var(--neutral-light);
         text-align: right;
         margin-top: 4px;
+        line-height: 1;
     }
     .chat-bubble.user .chat-timestamp {
-        color: var(--primary-mid);
+        color: rgba(10, 10, 10, 0.7);
+    }
+    .admin-chat-view .chat-timestamp {
+      font-size: 0.7rem;
     }
 
     .interview-controls {
@@ -1071,7 +1083,7 @@
     }
     .radar-chart-axis { stroke: var(--primary-light); stroke-width: 1; }
     .radar-chart-level { stroke: var(--primary-light); stroke-width: 1; stroke-dasharray: 4 4; }
-    .radar-chart-label { fill: var(--neutral-light); font-size: 10px; text-anchor: middle; }
+    .radar-chart-label { fill: var(--neutral-light); font-size: 10px; }
     .radar-chart-area { fill: var(--accent-glow-strong); stroke: var(--accent-color); stroke-width: 2; }
     .olq-interpretation-table {
       width: 100%;
@@ -1254,9 +1266,6 @@
     }
     .admin-chat-view .chat-bubble.user {
       background-color: #005f73;
-    }
-    .admin-chat-view .chat-timestamp {
-      font-size: 0.65rem;
     }
 
     /* Keyframe Animations */
