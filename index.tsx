@@ -403,13 +403,17 @@ const Dashboard = ({ user, onManage, onNavigate, onPersonaChange }) => {
             <div className="progress-grid" style={{marginTop: 'var(--spacing-lg)'}}>
                 {['TAT', 'WAT', 'SRT', 'SDT', 'OIR', 'GPE', 'Lecturerette', 'Interview'].map(test => <TestHistoryCard key={test} testType={test} results={user.testResults?.[test] || []} onViewFeedback={(feedback) => onManage('ViewFeedback', feedback)} />)}
             </div>
-             <div className="page-header" style={{marginTop: 'var(--spacing-xl)', fontSize: '1.5rem', borderBottomWidth: '2px'}}>Admin Controls</div>
-             <div className="header-actions" style={{flexWrap: 'wrap'}}>
-                 <button className="btn btn-secondary" onClick={() => onManage('TAT')}>Manage TAT</button>
-                 <button className="btn btn-secondary" onClick={() => onManage('WAT')}>Manage WAT</button>
-                 <button className="btn btn-secondary" onClick={() => onManage('SRT')}>Manage SRT</button>
-                 <button className="btn btn-secondary" onClick={() => onManage('Lecturerette')}>Manage Lecturerette</button>
-             </div>
+            {user.rollNumber === "1" && (
+                <>
+                    <div className="page-header" style={{marginTop: 'var(--spacing-xl)', fontSize: '1.5rem', borderBottomWidth: '2px'}}>Admin Controls</div>
+                    <div className="header-actions" style={{flexWrap: 'wrap'}}>
+                        <button className="btn btn-secondary" onClick={() => onManage('TAT')}>Manage TAT</button>
+                        <button className="btn btn-secondary" onClick={() => onManage('WAT')}>Manage WAT</button>
+                        <button className="btn btn-secondary" onClick={() => onManage('SRT')}>Manage SRT</button>
+                        <button className="btn btn-secondary" onClick={() => onManage('Lecturerette')}>Manage Lecturerette</button>
+                    </div>
+                </>
+            )}
         </div>
     );
 };
