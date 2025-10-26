@@ -1,5 +1,3 @@
-
-
 import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -199,11 +197,22 @@ async function decodeAudioData(data, ctx, sampleRate, numChannels) { const dataI
 const LoginPage = ({ onLogin }) => {
     const [name, setName] = useState('');
     const [rollNumber, setRollNumber] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setError('');
         if (name.trim() && rollNumber.trim()) {
-            onLogin(name.trim(), rollNumber.trim());
+            if (rollNumber.trim() === '1') {
+                if (password === 'Naveen@5799') {
+                    onLogin(name.trim(), rollNumber.trim());
+                } else {
+                    setError('Incorrect admin password.');
+                }
+            } else {
+                onLogin(name.trim(), rollNumber.trim());
+            }
         }
     };
 
@@ -235,6 +244,20 @@ const LoginPage = ({ onLogin }) => {
                             placeholder="Enter your assigned roll number"
                         />
                     </div>
+                    {rollNumber === '1' && (
+                        <div className="form-group">
+                            <label htmlFor="password">Admin Password</label>
+                            <input
+                                type="password"
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                placeholder="Enter admin password"
+                            />
+                        </div>
+                    )}
+                    {error && <p className="login-error">{error}</p>}
                     <button type="submit" className="btn btn-primary btn-block">
                         Enter Training Zone
                     </button>
@@ -346,6 +369,19 @@ const Badge: React.FC<{ badgeId: string, unlocked: boolean }> = ({ badgeId, unlo
 const Dashboard = ({ user, onManage, onNavigate, onPersonaChange }) => {
     return (
         <div>
+            {user.warnings && user.warnings.length > 0 && (
+                <div className="card admin-warning-card">
+                    <h2><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"></path></svg> Admin Warnings</h2>
+                    <ul>
+                        {user.warnings.map((warning, index) => (
+                            <li key={index}>
+                                <p>{warning.message}</p>
+                                <span>{new Date(warning.date).toLocaleString()}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
             <div className="page-header">
                 <h1>Welcome, {user.name}</h1>
                 <div className="header-actions">
@@ -1619,14 +1655,26 @@ const CommunityPage = ({ user, users, chats, onSendMessage }) => {
         </div>
     );
 };
-const AdminPanel = ({ users, chats, onUpdateUser }) => {
+const AdminPanel = ({ users, chats, onDeleteUser, onSendWarning }) => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [activeTab, setActiveTab] = useState('data'); // data, chats
     const [selectedChatPartner, setSelectedChatPartner] = useState(null);
+    const [warningMessage, setWarningMessage] = useState('');
 
     const handleSelectUser = (user) => {
         setSelectedUser(user);
         setSelectedChatPartner(null); // Reset chat selection when user changes
+        setWarningMessage('');
+    };
+
+    const confirmAndDelete = (rollNumber) => {
+        onDeleteUser(rollNumber);
+        setSelectedUser(null);
+    };
+    
+    const sendWarning = () => {
+        onSendWarning(selectedUser.rollNumber, warningMessage);
+        setWarningMessage('');
     };
 
     const chatHistory = selectedUser && selectedChatPartner ? chats[`${[selectedUser.rollNumber, selectedChatPartner].sort().join('_')}`] || [] : [];
@@ -1655,12 +1703,29 @@ const AdminPanel = ({ users, chats, onUpdateUser }) => {
                     ) : (
                         <>
                             <div className="community-tabs">
-                                <button className={activeTab === 'data' ? 'active' : ''} onClick={() => setActiveTab('data')}>Full Data</button>
+                                <button className={activeTab === 'data' ? 'active' : ''} onClick={() => setActiveTab('data')}>User Data & Actions</button>
                                 <button className={activeTab === 'chats' ? 'active' : ''} onClick={() => setActiveTab('chats')}>View Chats</button>
                             </div>
                             <div className="admin-tab-content">
                                 {activeTab === 'data' && (
                                     <>
+                                        <div className="admin-actions">
+                                            <div className="warning-section">
+                                                <h3>Send Warning</h3>
+                                                <textarea 
+                                                    value={warningMessage}
+                                                    onChange={(e) => setWarningMessage(e.target.value)}
+                                                    placeholder={`Write a warning for ${selectedUser.name}...`}
+                                                />
+                                                <button onClick={sendWarning} className="btn btn-secondary">Send Warning</button>
+                                            </div>
+                                            <div className="delete-section">
+                                                <h3>Danger Zone</h3>
+                                                <button onClick={() => confirmAndDelete(selectedUser.rollNumber)} className="btn btn-danger">
+                                                    Delete {selectedUser.name}
+                                                </button>
+                                            </div>
+                                        </div>
                                         <h2>Data for {selectedUser.name}</h2>
                                         <pre>{JSON.stringify(selectedUser, null, 2)}</pre>
                                     </>
@@ -1730,7 +1795,13 @@ const App = () => {
     // Find current user object from appData whenever it changes
     useEffect(() => {
         if(appData && currentUser) {
-            setCurrentUser(appData.users.find(u => u.rollNumber === currentUser.rollNumber));
+            const potentialCurrentUser = appData.users.find(u => u.rollNumber === currentUser.rollNumber);
+            if (potentialCurrentUser) {
+                setCurrentUser(potentialCurrentUser);
+            } else {
+                // User was deleted by admin, log them out
+                handleLogout();
+            }
         }
     }, [appData]);
 
@@ -1762,19 +1833,49 @@ const App = () => {
         setCurrentPage('dashboard');
     };
 
+    const updateAppData = useCallback((newAppData) => {
+        setAppData(newAppData);
+        db.save(newAppData);
+    }, []);
+
     const updateUser = useCallback((updatedData) => {
-        if (!currentUser) return;
-        setAppData(prev => {
-            const newAppData = { ...prev };
-            const userIndex = newAppData.users.findIndex(u => u.rollNumber === currentUser.rollNumber);
-            if (userIndex !== -1) {
-                newAppData.users[userIndex] = { ...newAppData.users[userIndex], ...updatedData };
-                setCurrentUser(newAppData.users[userIndex]);
-                db.save(newAppData);
+        if (!currentUser || !appData) return;
+        const newAppData = { ...appData };
+        const userIndex = newAppData.users.findIndex(u => u.rollNumber === currentUser.rollNumber);
+        if (userIndex !== -1) {
+            newAppData.users[userIndex] = { ...newAppData.users[userIndex], ...updatedData };
+            setCurrentUser(newAppData.users[userIndex]);
+            updateAppData(newAppData);
+        }
+    }, [currentUser, appData, updateAppData]);
+    
+    const handleDeleteUser = useCallback((rollNumberToDelete) => {
+        if (window.confirm(`Are you sure you want to delete user with Roll Number ${rollNumberToDelete}? This action cannot be undone.`)) {
+            const updatedUsers = appData.users.filter(user => user.rollNumber !== rollNumberToDelete);
+            updateAppData({ ...appData, users: updatedUsers });
+        }
+    }, [appData, updateAppData]);
+
+    const handleSendWarning = useCallback((rollNumber, message) => {
+        if (!message.trim()) {
+            alert("Warning message cannot be empty.");
+            return;
+        }
+        const newWarning = {
+            message,
+            date: new Date().toISOString()
+        };
+        const updatedUsers = appData.users.map(user => {
+            if (user.rollNumber === rollNumber) {
+                const existingWarnings = user.warnings || [];
+                return { ...user, warnings: [...existingWarnings, newWarning] };
             }
-            return newAppData;
+            return user;
         });
-    }, [currentUser]);
+        updateAppData({ ...appData, users: updatedUsers });
+        alert("Warning sent successfully!");
+    }, [appData, updateAppData]);
+
 
     const calculateUserScore = (user) => {
         let totalScore = 0;
@@ -1970,7 +2071,7 @@ const App = () => {
             case 'current affairs': return <CurrentAffairsView onGetBriefing={handleGetBriefing} briefingData={currentAffairsData} />;
             case 'topic briefer': return <TopicBrieferView />;
             case 'community': return <CommunityPage user={currentUser} users={users} chats={chats} onSendMessage={handleSendMessage} />;
-            case 'admin': return <AdminPanel users={users} chats={chats} onUpdateUser={()=>{}} />;
+            case 'admin': return <AdminPanel users={users} chats={chats} onDeleteUser={handleDeleteUser} onSendWarning={handleSendWarning} />;
             
             // Test start pages
             case 'tat':
