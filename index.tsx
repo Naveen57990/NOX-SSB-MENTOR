@@ -1459,7 +1459,7 @@ const ProfilePage = ({ user, onUpdate, onGeneratePhoto }) => {
     );
 };
 
-const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, chats }) => {
+const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, chats, calculateOLQScores }) => {
     const [activeTab, setActiveTab] = useState('friends');
     const [selectedFriendId, setSelectedFriendId] = useState(null);
     const chatEndRef = useRef(null);
@@ -1548,7 +1548,7 @@ const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, c
                                 </form>
                             </div>
                             <div className="friend-profile-view">
-                                <OLQDashboard user={selectedFriend} calculateOLQScores={()=>{}} isFriendView={true} />
+                                <OLQDashboard user={selectedFriend} calculateOLQScores={calculateOLQScores} isFriendView={true} />
                             </div>
                         </div>
                     ) : (
@@ -1706,6 +1706,24 @@ const App = () => {
     useEffect(() => {
         db.save(appData);
     }, [appData]);
+    
+    // This effect synchronizes the `currentUser` state variable with the `appData` "database".
+    // It ensures that any changes made to the user's data are reflected in the UI promptly.
+    useEffect(() => {
+        if (currentUser?.userId) {
+            const userInDb = appData.users.find(u => u.userId === currentUser.userId);
+            if (userInDb) {
+                // By using a deep comparison, we prevent unnecessary re-renders if the user object hasn't actually changed.
+                if (JSON.stringify(currentUser) !== JSON.stringify(userInDb)) {
+                    setCurrentUser(userInDb);
+                }
+            } else {
+                // If user is somehow deleted, log them out.
+                setCurrentUser(null);
+            }
+        }
+    }, [appData.users, currentUser?.userId]);
+
 
     const updateAppData = (updater) => {
         setAppData(prevData => {
@@ -1752,7 +1770,7 @@ const App = () => {
     const handleLogin = (name, rollNumber) => {
         let user;
         updateAppData(data => {
-            const existingUser = data.users.find(u => u.rollNumber === rollNumber);
+            let existingUser = data.users.find(u => u.rollNumber === rollNumber);
             if (!existingUser) {
                 user = { 
                     name, 
@@ -1770,20 +1788,31 @@ const App = () => {
                 };
                 return { ...data, users: [...data.users, user] };
             } else {
-                user = { ...existingUser, name }; // Update name
+                 // Ensure older user objects have new properties
+                user = { 
+                    ...existingUser,
+                    name,
+                    friends: existingUser.friends || [],
+                    friendRequests: existingUser.friendRequests || []
+                };
                 return { ...data, users: data.users.map(u => u.userId === user.userId ? user : u) };
             }
         });
-        setCurrentUser(user);
+        // Find the user again from the potentially updated data to set the state
+        const finalUserData = appData.users.find(u => u.rollNumber === rollNumber) || user;
+        setCurrentUser(finalUserData);
     };
 
     const updateCurrentUser = (userUpdater) => {
-        const updatedUser = userUpdater(currentUser);
-        setCurrentUser(updatedUser);
-        updateAppData(data => ({
-            ...data,
-            users: data.users.map(u => u.userId === updatedUser.userId ? updatedUser : u)
-        }));
+        updateAppData(data => {
+            const users = data.users.map(u => {
+                if (u.userId === currentUser.userId) {
+                    return userUpdater(u);
+                }
+                return u;
+            });
+            return { ...data, users };
+        });
     };
     
     const handleLogout = () => setCurrentUser(null);
@@ -1853,7 +1882,7 @@ const App = () => {
     
             if (action === 'add') {
                 if (!updatedTargetUser.friendRequests.includes(currentUserId) && !updatedTargetUser.friends.includes(currentUserId)) {
-                    updatedTargetUser.friendRequests.push(currentUserId);
+                    updatedTargetUser.friendRequests = [...updatedTargetUser.friendRequests, currentUserId];
                 }
             } else if (action === 'accept') {
                 updatedCurrentUser.friends = [...updatedCurrentUser.friends, targetUserId];
@@ -1865,7 +1894,6 @@ const App = () => {
     
             newUsers[currentUserIndex] = updatedCurrentUser;
             newUsers[targetUserIndex] = updatedTargetUser;
-            setCurrentUser(updatedCurrentUser);
             return { ...data, users: newUsers };
         });
     };
@@ -1920,14 +1948,21 @@ const App = () => {
     const handleManage = (modalType, data = null) => { if (modalType === 'ViewFeedback') setViewedFeedback(data); else setActiveModal(modalType); };
     
     const handleContentChange = (type, action, value) => {
-        const updaters = {
-            'TAT': { add: (url) => (d) => ({...d, tat_images: [...d.tat_images, url]}), addMultiple: (urls) => (d) => ({...d, tat_images: [...d.tat_images, ...urls]}), remove: (i) => (d) => ({...d, tat_images: d.tat_images.filter((_, idx) => i !== idx)}) },
-            'WAT': { add: (word) => (d) => ({...d, wat_words: [...d.wat_words, word]}), addMultiple: (words) => (d) => ({...d, wat_words: [...d.wat_words, ...words]}), remove: (i) => (d) => ({...d, wat_words: d.wat_words.filter((_, idx) => i !== idx)}) },
-            'SRT': { add: (s) => (d) => ({...d, srt_scenarios: [...d.srt_scenarios, s]}), addMultiple: (scenarios) => (d) => ({...d, srt_scenarios: [...d.srt_scenarios, ...scenarios]}), remove: (i) => (d) => ({...d, srt_scenarios: d.srt_scenarios.filter((_, idx) => i !== idx)}) },
-            'Lecturerette': { add: (s) => (d) => ({...d, lecturerette_topics: [...d.lecturerette_topics, s]}), addMultiple: (topics) => (d) => ({...d, lecturerette_topics: [...d.lecturerette_topics, ...topics]}), remove: (i) => (d) => ({...d, lecturerette_topics: d.lecturerette_topics.filter((_, idx) => i !== idx)}) },
+        const contentUpdater = (data) => {
+            const content = { ...data.content };
+            const keyMap = { 'TAT': 'tat_images', 'WAT': 'wat_words', 'SRT': 'srt_scenarios', 'Lecturerette': 'lecturerette_topics' };
+            const key = keyMap[type];
+            if (!key) return data;
+    
+            if (action === 'add') content[key] = [...content[key], value];
+            else if (action === 'addMultiple') content[key] = [...content[key], ...value];
+            else if (action === 'remove') content[key] = content[key].filter((_, idx) => value !== idx);
+    
+            return { ...data, content };
         };
-        updateAppData(data => ({ ...data, content: updaters[type][action](data.content) }));
+        updateAppData(contentUpdater);
     };
+    
 
     if (!currentUser) return <LoginPage onLogin={handleLogin} />;
     if (isInterviewing) return <VoiceInterviewSimulator piqData={currentUser.piqData} onComplete={handleInterviewComplete}/>;
@@ -1936,7 +1971,7 @@ const App = () => {
         switch (view) {
             case 'dashboard': return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
             case 'profile': return <ProfilePage user={currentUser} onUpdate={handleProfileUpdate} onGeneratePhoto={handleGeneratePhoto} />;
-            case 'community': return <CommunityPage currentUser={currentUser} allUsers={appData.users} onFriendAction={handleFriendAction} onSendMessage={handleSendMessage} chats={appData.chats} />;
+            case 'community': return <CommunityPage currentUser={currentUser} allUsers={appData.users} onFriendAction={handleFriendAction} onSendMessage={handleSendMessage} chats={appData.chats} calculateOLQScores={calculateOLQScores} />;
             case 'captain nox': return <CaptainNox user={currentUser} calculateOLQScores={calculateOLQScores} />;
             case 'olq dashboard': return <OLQDashboard user={currentUser} calculateOLQScores={calculateOLQScores} />;
             case 'current affairs': return <CurrentAffairsView onGetBriefing={handleGetBriefing} briefingData={dailyBriefing} />;
