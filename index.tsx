@@ -1,25 +1,42 @@
-
-
-import { GoogleGenAI, Type, LiveServerMessage, Modality, Blob } from "@google/genai";
+import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
 const API_KEY = process.env.API_KEY;
 
-// --- DATABASE (localStorage wrapper) ---
+// --- UNIFIED DATABASE (localStorage wrapper for a single data object) ---
+const DB_KEY = 'ssb_app_data';
+
+const getDefaultData = () => ({
+    users: [],
+    chats: {},
+    content: {
+        tat_images: TAT_IMAGES_DEFAULT,
+        wat_words: WAT_WORDS_DEFAULT,
+        srt_scenarios: SRT_SCENARIOS_DEFAULT,
+        lecturerette_topics: LECTURERETTE_TOPICS_DEFAULT,
+    }
+});
+
 const db = {
-    get: (key, defaultValue = null) => {
+    load: () => {
         try {
-            const value = localStorage.getItem(key);
-            return value ? JSON.parse(value) : defaultValue;
+            const data = localStorage.getItem(DB_KEY);
+            return data ? JSON.parse(data) : getDefaultData();
         } catch (e) {
-            return defaultValue;
+            console.error("Failed to load data from localStorage", e);
+            return getDefaultData();
         }
     },
-    set: (key, value) => {
-        localStorage.setItem(key, JSON.stringify(value));
+    save: (data) => {
+        try {
+            localStorage.setItem(DB_KEY, JSON.stringify(data));
+        } catch (e) {
+            console.error("Failed to save data to localStorage", e);
+        }
     }
 };
+
 
 // --- DATA & CONFIG CONSTANTS ---
 const TAT_IMAGES_DEFAULT = [
@@ -50,7 +67,7 @@ const OIR_QUESTIONS_DEFAULT = [
 const GPE_SCENARIOS_DEFAULT = [{
     title: "Flood Rescue Mission",
     mapImage: "https://i.imgur.com/kYqE1wS.png", // Placeholder map
-    problemStatement: "You are a group of 8 college students on a hiking trip near the village of Rampur. A sudden cloudburst has caused flash floods. You are at point A. The bridge connecting Rampur to the main road has been washed away. You overhear on a villager's radio that a rescue team will arrive in 3 hours. You have the following information:\n- A group of 15 villagers, including elderly and children, are stranded at the village temple (Point B), which is on higher ground but isolated.\n- Two injured hikers are trapped in a cave at Point C, needing immediate first aid.\n- The local dispensary at Point D has a first aid box but the doctor is out of town.\n- A partially damaged boat is available at Point E.\nYou have a small first aid kit, a rope, and mobile phones with low battery. Your task is to make a plan to ensure the safety of everyone until the rescue team arrives."
+    problemStatement: "You are a group of 8 college students on a hiking trip near the village of Rampur. A sudden cloudburst has caused flash floods. You are at a point A. The bridge connecting Rampur to the main road has been washed away. You overhear on a villager's radio that a rescue team will arrive in 3 hours. You have the following information:\n- A group of 15 villagers, including elderly and children, are stranded at the village temple (Point B), which is on higher ground but isolated.\n- Two injured hikers are trapped in a cave at Point C, needing immediate first aid.\n- The local dispensary at Point D has a first aid box but the doctor is out of town.\n- A partially damaged boat is available at Point E.\nYou have a small first aid kit, a rope, and mobile phones with low battery. Your task is to make a plan to ensure the safety of everyone until the rescue team arrives."
 }];
 
 const OLQ_LIST = ["Effective Intelligence", "Reasoning Ability", "Organizing Ability", "Power of Expression", "Social Adaptability", "Cooperation", "Sense of Responsibility", "Initiative", "Self Confidence", "Speed of Decision", "Ability to Influence a Group", "Liveliness", "Determination", "Courage", "Stamina"];
@@ -1166,33 +1183,12 @@ const GPEView = ({ scenario, onComplete }) => {
     );
 };
 
-const CurrentAffairsView = () => {
-    const [briefing, setBriefing] = useState(db.get('dailyBriefing', null));
-    const [isLoading, setIsLoading] = useState(false);
+const CurrentAffairsView = ({ onGetBriefing, briefingData }) => {
+    const { briefing, isLoading } = briefingData;
     const [quizMode, setQuizMode] = useState(false);
     const [answers, setAnswers] = useState({});
     const [score, setScore] = useState(null);
 
-    const getBriefing = async () => {
-        setIsLoading(true);
-        const prompt = `Generate 5 top national and international news headlines from today, relevant for a military aspirant in India. For each, provide a 2-3 sentence summary. Then, create a 5-question multiple-choice quiz based ONLY on these summaries. Return a valid JSON object with the schema: { "summaries": [{ "headline": "string", "summary": "string" }], "quiz": [{ "question": "string", "options": ["string", "string", "string", "string"], "answer": "string" }] }`;
-        try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: { responseMimeType: "application/json" }
-            });
-            const data = JSON.parse(response.text);
-            setBriefing(data);
-            db.set('dailyBriefing', data);
-        } catch (error) {
-            console.error("Failed to fetch daily briefing:", error);
-            alert("Could not fetch today's briefing. Please try again.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
     const handleQuizSubmit = () => {
         let correct = 0;
         briefing.quiz.forEach((q, index) => {
@@ -1207,7 +1203,7 @@ const CurrentAffairsView = () => {
         return <div className="card text-center">
             <h2>Daily Current Affairs</h2>
             <p>Get today's top news summaries and test your knowledge with a short quiz.</p>
-            <button onClick={getBriefing} className="btn btn-primary">Fetch Today's News</button>
+            <button onClick={onGetBriefing} className="btn btn-primary">Fetch Today's News</button>
         </div>
     }
 
@@ -1240,7 +1236,7 @@ const CurrentAffairsView = () => {
     }
 
     return <div>
-        <div className="page-header"><h1>Daily Briefing</h1> <button onClick={getBriefing} className="btn btn-secondary">Refresh News</button></div>
+        <div className="page-header"><h1>Daily Briefing</h1> <button onClick={onGetBriefing} className="btn btn-secondary">Refresh News</button></div>
         <div className="news-grid">
             {briefing.summaries.map((item, index) => (
                 <div key={index} className="card news-card">
@@ -1343,7 +1339,7 @@ const RadarChart = ({ data }) => {
     );
 };
 
-const OLQDashboard = ({ user, calculateOLQScores }) => {
+const OLQDashboard = ({ user, calculateOLQScores, isFriendView = false }) => {
     const [interpretation, setInterpretation] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -1375,11 +1371,11 @@ const OLQDashboard = ({ user, calculateOLQScores }) => {
         }
     };
     
-    useEffect(() => { getInterpretation() }, [olqScores]);
+    useEffect(() => { if(!isFriendView) getInterpretation() }, [olqScores, isFriendView]);
     
     return (
         <div>
-            <div className="page-header"><h1>OLQ Dashboard</h1></div>
+            <div className="page-header"><h1>{isFriendView ? `${user.name}'s OLQ Profile` : 'OLQ Dashboard'}</h1></div>
             <div className="card">
                 <div className="olq-dashboard-container">
                     <RadarChart data={chartData} />
@@ -1392,10 +1388,12 @@ const OLQDashboard = ({ user, calculateOLQScores }) => {
                         </table>
                     </div>
                 </div>
-                <div style={{marginTop: '2rem'}}>
-                    <h3>AI Interpretation</h3>
-                    {isLoading ? <div className="loading-spinner"></div> : <p style={{whiteSpace: 'pre-wrap'}}>{interpretation || 'No data to interpret yet. Complete some tests to see your analysis.'}</p>}
-                </div>
+                {!isFriendView && (
+                    <div style={{marginTop: '2rem'}}>
+                        <h3>AI Interpretation</h3>
+                        {isLoading ? <div className="loading-spinner"></div> : <p style={{whiteSpace: 'pre-wrap'}}>{interpretation || 'No data to interpret yet. Complete some tests to see your analysis.'}</p>}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -1461,25 +1459,260 @@ const ProfilePage = ({ user, onUpdate, onGeneratePhoto }) => {
     );
 };
 
+const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, chats }) => {
+    const [activeTab, setActiveTab] = useState('friends');
+    const [selectedFriendId, setSelectedFriendId] = useState(null);
+    const chatEndRef = useRef(null);
+
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [chats, selectedFriendId]);
+
+    const usersMap = useMemo(() => {
+        const map = {};
+        allUsers.forEach(u => map[u.userId] = u);
+        return map;
+    }, [allUsers]);
+
+    const friends = useMemo(() => currentUser.friends.map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
+    const friendRequests = useMemo(() => currentUser.friendRequests.map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
+    
+    const selectedFriend = selectedFriendId ? usersMap[selectedFriendId] : null;
+    const currentChatHistory = selectedFriendId ? chats[[currentUser.userId, selectedFriendId].sort().join('_')] || [] : [];
+    
+    const renderFriendStatusButton = (user) => {
+        if (currentUser.friends.includes(user.userId)) {
+            return <button className="btn btn-secondary" disabled>Friends</button>;
+        }
+        if (user.friendRequests.includes(currentUser.userId)) {
+            return <button className="btn btn-secondary" disabled>Pending</button>;
+        }
+        if (currentUser.friendRequests.includes(user.userId)) {
+            return <button className="btn btn-primary" onClick={() => onFriendAction('accept', user.userId)}>Accept</button>;
+        }
+        return <button className="btn btn-primary" onClick={() => onFriendAction('add', user.userId)}>Add Friend</button>;
+    };
+
+    return (
+        <div>
+            <div className="page-header"><h1>Community Hub</h1></div>
+            <div className="community-container">
+                <div className="community-sidebar">
+                    <div className="community-tabs">
+                        <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>Friends ({friends.length})</button>
+                        <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>Requests ({friendRequests.length})</button>
+                        <button className={activeTab === 'find' ? 'active' : ''} onClick={() => setActiveTab('find')}>Find Aspirants</button>
+                    </div>
+                    <div className="community-list">
+                        {activeTab === 'friends' && friends.map(f => (
+                            <div key={f.userId} className={`community-list-item ${selectedFriendId === f.userId ? 'active' : ''}`} onClick={() => setSelectedFriendId(f.userId)}>
+                                <img src={f.photo || 'https://i.imgur.com/V4RclNb.png'} alt={f.name} />
+                                <span>{f.name}</span>
+                            </div>
+                        ))}
+                         {activeTab === 'requests' && friendRequests.map(u => (
+                            <div key={u.userId} className="community-list-item request">
+                                <img src={u.photo || 'https://i.imgur.com/V4RclNb.png'} alt={u.name} />
+                                <span>{u.name} wants to be friends.</span>
+                                <div className="request-actions">
+                                    <button onClick={() => onFriendAction('accept', u.userId)} className="btn btn-primary">Accept</button>
+                                    <button onClick={() => onFriendAction('decline', u.userId)} className="btn btn-secondary">Decline</button>
+                                </div>
+                            </div>
+                        ))}
+                        {activeTab === 'find' && allUsers.filter(u => u.userId !== currentUser.userId).map(u => (
+                             <div key={u.userId} className="community-list-item">
+                                <img src={u.photo || 'https://i.imgur.com/V4RclNb.png'} alt={u.name} />
+                                <span>{u.name} ({u.rollNumber})</span>
+                                {renderFriendStatusButton(u)}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="community-main">
+                    {selectedFriend ? (
+                        <div className="chat-and-profile-layout">
+                            <div className="chat-view">
+                                <div className="interview-transcript">
+                                    {currentChatHistory.map((msg, index) => (
+                                        <div key={index} className={`chat-bubble ${msg.senderId === currentUser.userId ? 'user' : 'ai'}`}>
+                                            {msg.text}
+                                            <span className="chat-timestamp">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                    ))}
+                                    <div ref={chatEndRef} />
+                                </div>
+                                <form onSubmit={(e) => { e.preventDefault(); onSendMessage(selectedFriendId, e.target.message.value); e.target.message.value = ''; }} className="chat-input-form">
+                                    <input name="message" type="text" placeholder={`Message ${selectedFriend.name}...`}/>
+                                    <button type="submit" className="btn btn-primary">Send</button>
+                                </form>
+                            </div>
+                            <div className="friend-profile-view">
+                                <OLQDashboard user={selectedFriend} calculateOLQScores={()=>{}} isFriendView={true} />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="card text-center" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                            <p>Select a friend to start chatting and view their profile.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AdminPanel = ({ allData, onImportData }) => {
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [activeTab, setActiveTab] = useState('profile');
+    const [selectedChat, setSelectedChat] = useState(null);
+    const importFileRef = useRef(null);
+
+    const usersMap = useMemo(() => {
+        const map = {};
+        allData.users.forEach(u => map[u.userId] = u.name);
+        return map;
+    }, [allData.users]);
+    
+    const userChats = useMemo(() => {
+        if (!selectedUser) return [];
+        return Object.entries(allData.chats)
+            .filter(([key]) => key.split('_').includes(selectedUser.userId))
+            .map(([key, messages]) => {
+                const otherUserId = key.split('_').find(id => id !== selectedUser.userId);
+                return { key, otherUserName: usersMap[otherUserId] || 'Unknown', messages };
+            });
+    }, [selectedUser, allData.chats, usersMap]);
+
+    const handleExportData = () => {
+        const jsonString = JSON.stringify(allData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ssb_app_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleImportClick = () => {
+        importFileRef.current.click();
+    };
+
+    const handleFileImport = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result as string);
+                    if (confirm('This will overwrite all current application data. Are you sure you want to continue?')) {
+                        onImportData(importedData);
+                    }
+                } catch (error) {
+                    alert('Invalid JSON file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    
+    const selectUser = (user) => {
+        setSelectedUser(user);
+        setActiveTab('profile');
+        setSelectedChat(null);
+    };
+
+    return (
+        <div>
+            <div className="page-header"><h1>Admin Panel</h1></div>
+            <div className="card" style={{marginBottom: 'var(--spacing-lg)'}}>
+                <h3>Data Management</h3>
+                <p>Export a full backup of the application data, or import a previous backup to restore the state.</p>
+                <div className="header-actions" style={{marginTop: 'var(--spacing-md)'}}>
+                    <button className="btn btn-primary" onClick={handleExportData}>Export All Data</button>
+                    <button className="btn btn-secondary" onClick={handleImportClick}>Import Data</button>
+                    <input type="file" ref={importFileRef} style={{display: 'none'}} accept=".json" onChange={handleFileImport} />
+                </div>
+            </div>
+            <div className="admin-container">
+                <div className="admin-user-list">
+                    <h3>All Users ({allData.users.length})</h3>
+                    <ul>
+                        {allData.users.map(user => (
+                            <li key={user.userId} className={selectedUser?.userId === user.userId ? 'active' : ''} onClick={() => selectUser(user)}>
+                                {user.name} ({user.rollNumber})
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div className="admin-user-details card">
+                    {selectedUser ? (
+                        <div>
+                            <div className="community-tabs">
+                                <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>Profile Data</button>
+                                <button className={activeTab === 'chats' ? 'active' : ''} onClick={() => setActiveTab('chats')}>Friends & Chats</button>
+                            </div>
+                            <div className="admin-tab-content">
+                                {activeTab === 'profile' && <pre>{JSON.stringify(selectedUser, null, 2)}</pre>}
+                                {activeTab === 'chats' && (
+                                    <div>
+                                        <h4>Friends:</h4>
+                                        <ul>{selectedUser.friends.map(id => <li key={id}>{usersMap[id] || id}</li>)}</ul>
+                                        <hr style={{margin: 'var(--spacing-lg) 0'}}/>
+                                        <h4>Chats:</h4>
+                                        <div className="admin-chat-selector">
+                                            {userChats.map(chat => (
+                                                <button key={chat.key} className={`btn btn-secondary ${selectedChat?.key === chat.key ? 'active' : ''}`} onClick={() => setSelectedChat(chat)}>
+                                                    Chat with {chat.otherUserName}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {selectedChat && (
+                                            <div className="interview-transcript admin-chat-view">
+                                                {selectedChat.messages.map((msg, index) => (
+                                                    <div key={index} className={`chat-bubble ${msg.senderId === selectedUser.userId ? 'user' : 'ai'}`}>
+                                                        <strong>{usersMap[msg.senderId]}:</strong> {msg.text}
+                                                        <span className="chat-timestamp">{new Date(msg.timestamp).toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <p>Select a user to view their full data.</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // --- MAIN APP ---
 const App = () => {
-    const [currentUser, setCurrentUser] = useState(db.get('currentUser'));
-    const [users, setUsers] = useState(db.get('users', []));
+    const [appData, setAppData] = useState(db.load());
+    const [currentUser, setCurrentUser] = useState(null);
     const [view, setView] = useState('dashboard');
     const [viewedFeedback, setViewedFeedback] = useState(null);
     const [activeModal, setActiveModal] = useState(null);
     const [isInterviewing, setIsInterviewing] = useState(false);
-    
-    const [tatImages, setTatImages] = useState(db.get('tat_images', TAT_IMAGES_DEFAULT));
-    const [watWords, setWatWords] = useState(db.get('wat_words', WAT_WORDS_DEFAULT));
-    const [srtScenarios, setSrtScenarios] = useState(db.get('srt_scenarios', SRT_SCENARIOS_DEFAULT));
-    const [lectureretteTopics, setLectureretteTopics] = useState(db.get('lecturerette_topics', LECTURERETTE_TOPICS_DEFAULT));
+    const [dailyBriefing, setDailyBriefing] = useState({ briefing: null, isLoading: false });
 
-    useEffect(() => { db.set('tat_images', tatImages); }, [tatImages]);
-    useEffect(() => { db.set('wat_words', watWords); }, [watWords]);
-    useEffect(() => { db.set('srt_scenarios', srtScenarios); }, [srtScenarios]);
-    useEffect(() => { db.set('lecturerette_topics', lectureretteTopics); }, [lectureretteTopics]);
+    useEffect(() => {
+        db.save(appData);
+    }, [appData]);
+
+    const updateAppData = (updater) => {
+        setAppData(prevData => {
+            const newData = updater(prevData);
+            return newData;
+        });
+    };
 
     const checkAndAwardBadges = (user) => {
         const testResults = user.testResults || {};
@@ -1492,14 +1725,12 @@ const App = () => {
         if (testResults.WAT?.length >= 5) newBadges.push('word_warrior');
         if (testResults.Lecturerette?.length >= 1) newBadges.push('orator_apprentice');
         if (testResults.Interview?.length >= 1) newBadges.push('interviewer_ace');
-        // NOTE: 'consistent_cadet' requires tracking login dates, which is a more complex implementation.
 
         const allNewBadges = [...new Set([...(user.unlockedBadges || []), ...newBadges])];
         return {...user, unlockedBadges: allNewBadges };
     };
     
     const calculateOLQScores = useCallback((user) => {
-        // FIX: Explicitly type `scores` to ensure values are treated as numbers, resolving multiple downstream type errors.
         const scores: { [key: string]: number } = {};
         OLQ_LIST.forEach(olq => scores[olq] = 0);
         if (!user || !user.testResults) return scores;
@@ -1518,39 +1749,43 @@ const App = () => {
         return scores;
     }, []);
 
-    useEffect(() => {
-        db.set('currentUser', currentUser);
-        if (currentUser) {
-            setUsers(prevUsers => {
-                const userExists = prevUsers.some(u => u.rollNumber === currentUser.rollNumber);
-                if (userExists) return prevUsers.map(u => u.rollNumber === currentUser.rollNumber ? currentUser : u);
-                return [...prevUsers, currentUser];
-            });
-        }
-    }, [currentUser]);
-
-    useEffect(() => { db.set('users', users); }, [users]);
-
     const handleLogin = (name, rollNumber) => {
-        let user = users.find(u => u.rollNumber === rollNumber);
-        if (!user) {
-            user = { 
-                name, 
-                rollNumber, 
-                testResults: {}, 
-                score: 0, 
-                piqData: {}, 
-                persona: 'psychologist', 
-                unlockedBadges: [],
-                photo: null,
-                bio: ''
-            };
-        } else {
-            user.name = name; // Update name in case it's different
-        }
+        let user;
+        updateAppData(data => {
+            const existingUser = data.users.find(u => u.rollNumber === rollNumber);
+            if (!existingUser) {
+                user = { 
+                    name, 
+                    rollNumber,
+                    userId: rollNumber,
+                    testResults: {}, 
+                    score: 0, 
+                    piqData: {}, 
+                    persona: 'psychologist', 
+                    unlockedBadges: [],
+                    photo: null,
+                    bio: '',
+                    friends: [],
+                    friendRequests: [],
+                };
+                return { ...data, users: [...data.users, user] };
+            } else {
+                user = { ...existingUser, name }; // Update name
+                return { ...data, users: data.users.map(u => u.userId === user.userId ? user : u) };
+            }
+        });
         setCurrentUser(user);
     };
 
+    const updateCurrentUser = (userUpdater) => {
+        const updatedUser = userUpdater(currentUser);
+        setCurrentUser(updatedUser);
+        updateAppData(data => ({
+            ...data,
+            users: data.users.map(u => u.userId === updatedUser.userId ? updatedUser : u)
+        }));
+    };
+    
     const handleLogout = () => setCurrentUser(null);
     
     const handleTestComplete = async (testType, data) => {
@@ -1562,7 +1797,7 @@ const App = () => {
 
         if (testType === 'OIR') {
             const { score } = data;
-            score_gain = score * 2; // OIR score contribution
+            score_gain = score * 2;
             payload = { responses: data.answers, score, feedback: null };
         } else {
             setViewedFeedback({ isLoading: true });
@@ -1577,7 +1812,7 @@ const App = () => {
             payload = { responses: data, feedback, score: score_gain };
         }
 
-        setCurrentUser(prevUser => {
+        updateCurrentUser(prevUser => {
             const newTestResults = { ...prevUser.testResults };
             if (!newTestResults[testType]) newTestResults[testType] = [];
             newTestResults[testType].push({ ...payload, date: new Date().toISOString() });
@@ -1595,7 +1830,7 @@ const App = () => {
         const aiFeedback = await getAIAssessment('Interview', { piqData: currentUser.piqData, transcript }, currentUser.persona);
         setViewedFeedback(aiFeedback);
 
-        setCurrentUser(prevUser => {
+        updateCurrentUser(prevUser => {
             const newTestResults = { ...prevUser.testResults };
             if (!newTestResults['Interview']) newTestResults['Interview'] = [];
             const score_gain = aiFeedback.olqs_demonstrated?.length * 10 || 0;
@@ -1605,6 +1840,48 @@ const App = () => {
         });
     };
     
+    const handleFriendAction = (action, targetUserId) => {
+        const currentUserId = currentUser.userId;
+        updateAppData(data => {
+            let newUsers = [...data.users];
+            const currentUserIndex = newUsers.findIndex(u => u.userId === currentUserId);
+            const targetUserIndex = newUsers.findIndex(u => u.userId === targetUserId);
+            if (currentUserIndex === -1 || targetUserIndex === -1) return data;
+    
+            let updatedCurrentUser = { ...newUsers[currentUserIndex] };
+            let updatedTargetUser = { ...newUsers[targetUserIndex] };
+    
+            if (action === 'add') {
+                if (!updatedTargetUser.friendRequests.includes(currentUserId) && !updatedTargetUser.friends.includes(currentUserId)) {
+                    updatedTargetUser.friendRequests.push(currentUserId);
+                }
+            } else if (action === 'accept') {
+                updatedCurrentUser.friends = [...updatedCurrentUser.friends, targetUserId];
+                updatedCurrentUser.friendRequests = updatedCurrentUser.friendRequests.filter(id => id !== targetUserId);
+                updatedTargetUser.friends = [...updatedTargetUser.friends, currentUserId];
+            } else if (action === 'decline') {
+                updatedCurrentUser.friendRequests = updatedCurrentUser.friendRequests.filter(id => id !== targetUserId);
+            }
+    
+            newUsers[currentUserIndex] = updatedCurrentUser;
+            newUsers[targetUserIndex] = updatedTargetUser;
+            setCurrentUser(updatedCurrentUser);
+            return { ...data, users: newUsers };
+        });
+    };
+    
+    const handleSendMessage = (recipientId, text) => {
+        if (!text.trim()) return;
+        const chatKey = [currentUser.userId, recipientId].sort().join('_');
+        const newMessage = { senderId: currentUser.userId, text, timestamp: new Date().toISOString() };
+        updateAppData(data => {
+            const updatedChats = { ...data.chats };
+            if (!updatedChats[chatKey]) updatedChats[chatKey] = [];
+            updatedChats[chatKey].push(newMessage);
+            return { ...data, chats: updatedChats };
+        });
+    };
+
     const handleGeneratePhoto = async () => {
         try {
             const response = await ai.models.generateContent({
@@ -1613,9 +1890,7 @@ const App = () => {
                 config: { responseModalities: [Modality.IMAGE] }
             });
             for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    return `data:image/png;base64,${part.inlineData.data}`;
-                }
+                if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
             }
             return null;
         } catch (error) {
@@ -1624,23 +1899,34 @@ const App = () => {
             return null;
         }
     };
-
-    const handleProfileUpdate = (profileData) => {
-        setCurrentUser(prev => ({...prev, ...profileData}));
+    
+    const handleGetBriefing = async () => {
+        setDailyBriefing({ briefing: null, isLoading: true });
+        const prompt = `Generate 5 top national and international news headlines from today, relevant for a military aspirant in India. For each, provide a 2-3 sentence summary. Then, create a 5-question multiple-choice quiz based ONLY on these summaries. Return a valid JSON object with the schema: { "summaries": [{ "headline": "string", "summary": "string" }], "quiz": [{ "question": "string", "options": ["string", "string", "string", "string"], "answer": "string" }] }`;
+        try {
+            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: "application/json" } });
+            const data = JSON.parse(response.text);
+            setDailyBriefing({ briefing: data, isLoading: false });
+        } catch (error) {
+            console.error("Failed to fetch daily briefing:", error);
+            alert("Could not fetch today's briefing. Please try again.");
+            setDailyBriefing({ briefing: null, isLoading: false });
+        }
     };
 
-    const handleSavePiq = (piqData) => setCurrentUser(prev => ({...prev, piqData}));
-    const handlePersonaChange = (persona) => setCurrentUser(prev => ({...prev, persona}));
+    const handleProfileUpdate = (profileData) => updateCurrentUser(prev => ({...prev, ...profileData}));
+    const handleSavePiq = (piqData) => updateCurrentUser(prev => ({...prev, piqData}));
+    const handlePersonaChange = (persona) => updateCurrentUser(prev => ({...prev, persona}));
     const handleManage = (modalType, data = null) => { if (modalType === 'ViewFeedback') setViewedFeedback(data); else setActiveModal(modalType); };
     
     const handleContentChange = (type, action, value) => {
         const updaters = {
-            'TAT': { add: (url) => setTatImages(p => [...p, url]), addMultiple: (urls) => setTatImages(p => [...p, ...urls]), remove: (i) => setTatImages(p => p.filter((_, idx) => i !== idx)) },
-            'WAT': { add: (word) => setWatWords(p => [...p, word]), addMultiple: (words) => setWatWords(p => [...p, ...words]), remove: (i) => setWatWords(p => p.filter((_, idx) => i !== idx)) },
-            'SRT': { add: (s) => setSrtScenarios(p => [...p, s]), addMultiple: (scenarios) => setSrtScenarios(p => [...p, ...scenarios]), remove: (i) => setSrtScenarios(p => p.filter((_, idx) => i !== idx)) },
-            'Lecturerette': { add: (s) => setLectureretteTopics(p => [...p, s]), addMultiple: (scenarios) => setLectureretteTopics(p => [...p, ...scenarios]), remove: (i) => setLectureretteTopics(p => p.filter((_, idx) => i !== idx)) },
+            'TAT': { add: (url) => (d) => ({...d, tat_images: [...d.tat_images, url]}), addMultiple: (urls) => (d) => ({...d, tat_images: [...d.tat_images, ...urls]}), remove: (i) => (d) => ({...d, tat_images: d.tat_images.filter((_, idx) => i !== idx)}) },
+            'WAT': { add: (word) => (d) => ({...d, wat_words: [...d.wat_words, word]}), addMultiple: (words) => (d) => ({...d, wat_words: [...d.wat_words, ...words]}), remove: (i) => (d) => ({...d, wat_words: d.wat_words.filter((_, idx) => i !== idx)}) },
+            'SRT': { add: (s) => (d) => ({...d, srt_scenarios: [...d.srt_scenarios, s]}), addMultiple: (scenarios) => (d) => ({...d, srt_scenarios: [...d.srt_scenarios, ...scenarios]}), remove: (i) => (d) => ({...d, srt_scenarios: d.srt_scenarios.filter((_, idx) => i !== idx)}) },
+            'Lecturerette': { add: (s) => (d) => ({...d, lecturerette_topics: [...d.lecturerette_topics, s]}), addMultiple: (topics) => (d) => ({...d, lecturerette_topics: [...d.lecturerette_topics, ...topics]}), remove: (i) => (d) => ({...d, lecturerette_topics: d.lecturerette_topics.filter((_, idx) => i !== idx)}) },
         };
-        updaters[type][action](value);
+        updateAppData(data => ({ ...data, content: updaters[type][action](data.content) }));
     };
 
     if (!currentUser) return <LoginPage onLogin={handleLogin} />;
@@ -1650,26 +1936,32 @@ const App = () => {
         switch (view) {
             case 'dashboard': return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
             case 'profile': return <ProfilePage user={currentUser} onUpdate={handleProfileUpdate} onGeneratePhoto={handleGeneratePhoto} />;
+            case 'community': return <CommunityPage currentUser={currentUser} allUsers={appData.users} onFriendAction={handleFriendAction} onSendMessage={handleSendMessage} chats={appData.chats} />;
             case 'captain nox': return <CaptainNox user={currentUser} calculateOLQScores={calculateOLQScores} />;
             case 'olq dashboard': return <OLQDashboard user={currentUser} calculateOLQScores={calculateOLQScores} />;
-            case 'current affairs': return <CurrentAffairsView />;
+            case 'current affairs': return <CurrentAffairsView onGetBriefing={handleGetBriefing} briefingData={dailyBriefing} />;
             case 'topic briefer': return <TopicBrieferView />;
             case 'oir': return <OIRTestRunner questions={OIR_QUESTIONS_DEFAULT} onComplete={(score, answers) => handleTestComplete('OIR', {score, answers})} />;
             case 'gpe': return <GPEView scenario={GPE_SCENARIOS_DEFAULT[0]} onComplete={(plan) => handleTestComplete('GPE', plan)} />;
-            case 'tat': return <TestRunner testType="TAT" data={tatImages} timeLimit={240} onComplete={(r) => handleTestComplete('TAT', r)} />;
-            case 'wat': return <TestRunner testType="WAT" data={watWords} timeLimit={15} onComplete={(r) => handleTestComplete('WAT', r)} />;
-            case 'srt': return <TestRunner testType="SRT" data={srtScenarios} timeLimit={30} onComplete={(r) => handleTestComplete('SRT', r)} />;
+            case 'tat': return <TestRunner testType="TAT" data={appData.content.tat_images} timeLimit={240} onComplete={(r) => handleTestComplete('TAT', r)} />;
+            case 'wat': return <TestRunner testType="WAT" data={appData.content.wat_words} timeLimit={15} onComplete={(r) => handleTestComplete('WAT', r)} />;
+            case 'srt': return <TestRunner testType="SRT" data={appData.content.srt_scenarios} timeLimit={30} onComplete={(r) => handleTestComplete('SRT', r)} />;
             case 'sdt': return <SDTView onComplete={(r) => handleTestComplete('SDT', r)} />;
-            case 'lecturerette': return <LectureretteView topics={lectureretteTopics} onComplete={(r) => handleTestComplete('Lecturerette', r)} />;
-            case 'leaderboard': return <Leaderboard users={users}/>;
+            case 'lecturerette': return <LectureretteView topics={appData.content.lecturerette_topics} onComplete={(r) => handleTestComplete('Lecturerette', r)} />;
+            case 'leaderboard': return <Leaderboard users={appData.users}/>;
             case 'interview': return <InterviewPage user={currentUser} onSavePiq={handleSavePiq} onStartInterview={() => setIsInterviewing(true)} onViewFeedback={fb => setViewedFeedback(fb)} />;
+            case 'admin panel': return <AdminPanel allData={appData} onImportData={setAppData} />;
             default: return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
         }
     };
 
-    const navLinks = [
-      'dashboard', 'profile', 'olq dashboard', 'captain nox', 'current affairs', 'topic briefer', '|', 'oir', 'gpe', 'tat', 'wat', 'srt', 'sdt', 'lecturerette', 'interview', '|', 'leaderboard'
+    let navLinks = [
+      'dashboard', 'profile', 'olq dashboard', 'community', 'captain nox', 'current affairs', 'topic briefer', '|', 'oir', 'gpe', 'tat', 'wat', 'srt', 'sdt', 'lecturerette', 'interview', '|', 'leaderboard'
     ];
+    
+    if (currentUser && currentUser.rollNumber === 'ADMIN_001') {
+        navLinks.push('|', 'admin panel');
+    }
 
     return (
         <>
@@ -1680,7 +1972,10 @@ const App = () => {
                         <ul>
                             {navLinks.map((v, i) => {
                                 if (v === '|') return <hr key={i} style={{border: 'none', borderTop: '1px solid var(--primary-light)', margin: 'var(--spacing-md) 0'}}/>;
-                                return <li key={v}><a href="#" className={view === v ? 'active' : ''} onClick={() => setView(v)}>{v.charAt(0).toUpperCase() + v.slice(1).replace(' nox', ' Nox').replace('olq', 'OLQ')}</a></li>
+                                return <li key={v}><a href="#" className={view === v ? 'active' : ''} onClick={() => setView(v)}>
+                                    {v.charAt(0).toUpperCase() + v.slice(1).replace(' nox', ' Nox').replace('olq', 'OLQ')}
+                                    {v === 'community' && currentUser.friendRequests?.length > 0 && <span className="notification-badge">{currentUser.friendRequests.length}</span>}
+                                    </a></li>
                             })}
                         </ul>
                     </nav>
@@ -1697,10 +1992,10 @@ const App = () => {
                 <main className="main-content">{renderView()}</main>
             </div>
             <FeedbackModal feedback={viewedFeedback} onClose={() => setViewedFeedback(null)} />
-            {activeModal === 'TAT' && <ManageTatModal images={tatImages} onAdd={(url) => handleContentChange('TAT', 'add', url)} onAddMultiple={(urls) => handleContentChange('TAT', 'addMultiple', urls)} onRemove={(index) => handleContentChange('TAT', 'remove', index)} onClose={() => setActiveModal(null)} />}
-            {activeModal === 'WAT' && <ManageContentModal title="Manage WAT Words" items={watWords} onAdd={(word) => handleContentChange('WAT', 'add', word)} onAddMultiple={(words) => handleContentChange('WAT', 'addMultiple', words)} onRemove={(index) => handleContentChange('WAT', 'remove', index)} onClose={() => setActiveModal(null)} type="WAT" />}
-            {activeModal === 'SRT' && <ManageContentModal title="Manage SRT Scenarios" items={srtScenarios} onAdd={(scenario) => handleContentChange('SRT', 'add', scenario)} onAddMultiple={(scenarios) => handleContentChange('SRT', 'addMultiple', scenarios)} onRemove={(index) => handleContentChange('SRT', 'remove', index)} onClose={() => setActiveModal(null)} type="SRT" />}
-            {activeModal === 'Lecturerette' && <ManageContentModal title="Manage Lecturerette Topics" items={lectureretteTopics} onAdd={(topic) => handleContentChange('Lecturerette', 'add', topic)} onAddMultiple={(topics) => handleContentChange('Lecturerette', 'addMultiple', topics)} onRemove={(index) => handleContentChange('Lecturerette', 'remove', index)} onClose={() => setActiveModal(null)} type="Lecturerette" />}
+            {activeModal === 'TAT' && <ManageTatModal images={appData.content.tat_images} onAdd={(url) => handleContentChange('TAT', 'add', url)} onAddMultiple={(urls) => handleContentChange('TAT', 'addMultiple', urls)} onRemove={(index) => handleContentChange('TAT', 'remove', index)} onClose={() => setActiveModal(null)} />}
+            {activeModal === 'WAT' && <ManageContentModal title="Manage WAT Words" items={appData.content.wat_words} onAdd={(word) => handleContentChange('WAT', 'add', word)} onAddMultiple={(words) => handleContentChange('WAT', 'addMultiple', words)} onRemove={(index) => handleContentChange('WAT', 'remove', index)} onClose={() => setActiveModal(null)} type="WAT" />}
+            {activeModal === 'SRT' && <ManageContentModal title="Manage SRT Scenarios" items={appData.content.srt_scenarios} onAdd={(scenario) => handleContentChange('SRT', 'add', scenario)} onAddMultiple={(scenarios) => handleContentChange('SRT', 'addMultiple', scenarios)} onRemove={(index) => handleContentChange('SRT', 'remove', index)} onClose={() => setActiveModal(null)} type="SRT" />}
+            {activeModal === 'Lecturerette' && <ManageContentModal title="Manage Lecturerette Topics" items={appData.content.lecturerette_topics} onAdd={(topic) => handleContentChange('Lecturerette', 'add', topic)} onAddMultiple={(topics) => handleContentChange('Lecturerette', 'addMultiple', topics)} onRemove={(index) => handleContentChange('Lecturerette', 'remove', index)} onClose={() => setActiveModal(null)} type="Lecturerette" />}
         </>
     );
 };

@@ -117,6 +117,23 @@
         transform: translateX(0);
     }
 
+    .notification-badge {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        background-color: var(--danger-color);
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
     .sidebar-footer {
         margin-top: auto;
         padding-top: var(--spacing-md);
@@ -812,6 +829,7 @@
         border-radius: var(--border-radius);
         line-height: 1.5;
         word-wrap: break-word;
+        position: relative;
     }
     .chat-bubble.ai {
         background-color: var(--primary-light);
@@ -825,6 +843,17 @@
         align-self: flex-end;
         border-bottom-right-radius: var(--spacing-sm);
     }
+    .chat-timestamp {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--neutral-light);
+        text-align: right;
+        margin-top: 4px;
+    }
+    .chat-bubble.user .chat-timestamp {
+        color: var(--primary-mid);
+    }
+
     .interview-controls {
         display: flex;
         justify-content: center;
@@ -1038,6 +1067,180 @@
     .olq-interpretation-table tr:last-child td { border: none; }
     .olq-interpretation-table strong { color: var(--accent-color); }
 
+    /* Community Page */
+    .community-container {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: var(--spacing-lg);
+      height: 85vh;
+    }
+    .community-sidebar {
+      background: var(--primary-mid);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--primary-light);
+      display: flex;
+      flex-direction: column;
+    }
+    .community-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--primary-light);
+    }
+    .community-tabs button {
+      flex: 1;
+      padding: var(--spacing-md);
+      background: transparent;
+      border: none;
+      color: var(--neutral-light);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      position: relative;
+    }
+    .community-tabs button.active {
+      color: var(--accent-color);
+    }
+    .community-tabs button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--accent-color);
+    }
+    .community-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--spacing-sm);
+    }
+    .community-list-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-sm);
+      border-radius: var(--border-radius);
+      transition: background-color 0.2s;
+      cursor: pointer;
+    }
+    .community-list-item:hover {
+      background-color: var(--primary-light);
+    }
+    .community-list-item.active {
+      background-color: var(--primary-light);
+      border-left: 3px solid var(--accent-color);
+    }
+    .community-list-item img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .community-list-item span {
+      flex-grow: 1;
+    }
+    .community-list-item.request {
+      flex-wrap: wrap;
+    }
+    .request-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+      width: 100%;
+      justify-content: flex-end;
+    }
+    .request-actions .btn {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+    }
+    .community-main {
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-and-profile-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: var(--spacing-lg);
+        height: 100%;
+        overflow: hidden;
+    }
+    .chat-view {
+        display: flex;
+        flex-direction: column;
+        background: var(--primary-mid);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        border: 1px solid var(--primary-light);
+        height: 100%;
+    }
+    .friend-profile-view {
+        overflow-y: auto;
+        height: 100%;
+    }
+
+    /* Admin Panel */
+    .admin-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: var(--spacing-lg);
+      height: 80vh; /* Adjusted height */
+    }
+    .admin-user-list {
+      background: var(--primary-mid);
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      overflow-y: auto;
+      border: 1px solid var(--primary-light);
+    }
+    .admin-user-list ul {
+      list-style-type: none;
+    }
+    .admin-user-list li {
+      padding: var(--spacing-sm) var(--spacing-md);
+      cursor: pointer;
+      border-radius: var(--border-radius);
+    }
+    .admin-user-list li:hover, .admin-user-list li.active {
+      background: var(--primary-light);
+    }
+    .admin-user-details {
+        display: flex;
+        flex-direction: column;
+    }
+    .admin-tab-content {
+        padding-top: var(--spacing-lg);
+        flex: 1;
+        overflow-y: auto;
+    }
+    .admin-user-details pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background-color: var(--primary-dark);
+      padding: var(--spacing-md);
+      border-radius: var(--border-radius);
+      max-height: 60vh;
+      overflow: auto;
+    }
+    .admin-chat-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-lg);
+    }
+    .admin-chat-selector .btn.active {
+        background-color: var(--primary-light);
+    }
+    .admin-chat-view {
+        height: 45vh;
+        background-color: var(--primary-dark);
+    }
+    .admin-chat-view .chat-bubble.ai {
+      background-color: #3c3c3c;
+    }
+    .admin-chat-view .chat-bubble.user {
+      background-color: #005f73;
+    }
+    .admin-chat-view .chat-timestamp {
+      font-size: 0.65rem;
+    }
 
     /* Keyframe Animations */
     @keyframes spin {
@@ -1108,9 +1311,12 @@
     
     /* Responsive */
     @media (max-width: 992px) {
-        .gpe-container, .olq-dashboard-container, .profile-edit-container {
+        .gpe-container, .olq-dashboard-container, .profile-edit-container, .community-container, .admin-container, .chat-and-profile-layout {
             grid-template-columns: 1fr;
             height: auto;
+        }
+        .friend-profile-view {
+          margin-top: var(--spacing-lg);
         }
     }
 
