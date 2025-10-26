@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -453,6 +454,7 @@ const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
     const [responses, setResponses] = useState([]);
     const [currentResponse, setCurrentResponse] = useState('');
     const [timeLeft, setTimeLeft] = useState(timeLimit);
+    // FIX: Initialize useRef with null instead of itself to fix "used before its declaration" error.
     const timerRef = useRef<number | null>(null);
 
     const handleNext = useCallback(() => {
@@ -1707,6 +1709,7 @@ const App = () => {
     const [modalData, setModalData] = useState(null);
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
     const [currentAffairsData, setCurrentAffairsData] = useState({ briefing: null, isLoading: false });
+    const [openNavSections, setOpenNavSections] = useState({ psychology: true, gto: true, knowledge: true });
 
     useEffect(() => {
         const unsubscribe = db.listen(setAppData);
@@ -1938,6 +1941,10 @@ const App = () => {
         setAppData(newAppData);
         db.save(newAppData);
     };
+    
+    const toggleNavSection = (sectionId) => {
+        setOpenNavSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
+    };
 
     const renderPage = () => {
         if (currentTest) {
@@ -2004,25 +2011,25 @@ const App = () => {
     }
     
     const navLinks = [
-        { id: 'dashboard', name: 'Dashboard' },
-        { id: 'psychology', name: 'Psychology Tests', children: [
+        { id: 'dashboard', name: 'Dashboard', icon: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z' },
+        { id: 'psychology', name: 'Psychology Tests', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z', children: [
             { id: 'tat', name: 'TAT' },
             { id: 'wat', name: 'WAT' },
             { id: 'srt', name: 'SRT' },
             { id: 'sdt', name: 'SDT' },
         ]},
-        { id: 'gto', name: 'GTO Tasks', children: [
+        { id: 'gto', name: 'GTO Tasks', icon: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z', children: [
             { id: 'gpe', name: 'GPE' },
             { id: 'lecturerette', name: 'Lecturerette' },
         ]},
-        { id: 'interview', name: 'Interview' },
-        { id: 'oir', name: 'OIR Test' },
-        { id: 'knowledge', name: 'Knowledge Base', children: [
+        { id: 'interview', name: 'Interview', icon: 'M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z' },
+        { id: 'oir', name: 'OIR Test', icon: 'M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z' },
+        { id: 'knowledge', name: 'Knowledge Base', icon: 'M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z', children: [
             { id: 'current affairs', name: 'Current Affairs' },
             { id: 'topic briefer', name: 'Topic Briefer' },
         ]},
-        { id: 'leaderboard', name: 'Leaderboard' },
-        { id: 'community', name: 'Community Hub' },
+        { id: 'leaderboard', name: 'Leaderboard', icon: 'M10 20H4V4h6v16zm2 0h6V4h-6v16zm8-16v16h6V4h-6z' },
+        { id: 'community', name: 'Community Hub', icon: 'M16.5 12c1.38 0 2.5-1.12 2.5-2.5S17.88 7 16.5 7C15.12 7 14 8.12 14 9.5s1.12 2.5 2.5 2.5zM9 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm7.5 3c-1.83 0-5.5.92-5.5 2.75V18h11v-1.25c0-1.83-3.67-2.75-5.5-2.75zM9 13c-2.33 0-7 1.17-7 3.5V18h7v-1.5c0-.83.43-1.58 1.12-2.09-.9-.33-1.95-.51-3.12-.51z' },
     ];
     
     return (
@@ -2030,17 +2037,27 @@ const App = () => {
             <nav className="sidebar">
                 <div className="sidebar-header">NOX</div>
                 <div className="sidebar-nav">
-                    <ul>
+                     <ul className="sidebar-nav-list">
                         {navLinks.map(link => (
-                            <li key={link.id}>
-                                <a href="#" onClick={(e) => { e.preventDefault(); if(!link.children) {setCurrentPage(link.id); setCurrentTest(null);}}} className={currentPage === link.id ? 'active' : ''}>
-                                    {link.name}
+                            <li key={link.id} className="nav-item">
+                                <a href="#" onClick={(e) => {
+                                    e.preventDefault();
+                                    if (link.children) {
+                                        toggleNavSection(link.id);
+                                    } else {
+                                        setCurrentPage(link.id);
+                                        setCurrentTest(null);
+                                    }
+                                }} className={`nav-link ${(currentPage === link.id || link.children?.some(c => c.id === currentPage)) ? 'active' : ''}`}>
+                                    <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d={link.icon}></path></svg>
+                                    <span className="nav-text">{link.name}</span>
+                                    {link.children && <svg className={`nav-chevron ${openNavSections[link.id] ? 'open' : ''}`} viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"></path></svg>}
                                 </a>
                                 {link.children && (
-                                    <ul>
+                                    <ul className={`submenu ${openNavSections[link.id] ? 'open' : ''}`}>
                                         {link.children.map(child => (
-                                            <li key={child.id}>
-                                                <a href="#" onClick={(e) => {e.preventDefault(); setCurrentPage(child.id); setCurrentTest(null);}} className={currentPage === child.id ? 'active' : ''}>
+                                            <li key={child.id} className="nav-item-child">
+                                                <a href="#" onClick={(e) => {e.preventDefault(); setCurrentPage(child.id); setCurrentTest(null);}} className={`nav-link-child ${currentPage === child.id ? 'active' : ''}`}>
                                                     {child.name}
                                                 </a>
                                             </li>
@@ -2049,23 +2066,21 @@ const App = () => {
                                 )}
                             </li>
                         ))}
-                         {/* Admin Link - Rendered conditionally */}
-                        {currentUser.rollNumber === "1" && (
-                            <li>
-                                <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage('admin'); }} className={currentPage === 'admin' ? 'active' : ''}>
-                                    Admin Panel
+                         {currentUser.rollNumber === "1" && (
+                             <li className="nav-item">
+                                <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage('admin'); }} className={`nav-link ${currentPage === 'admin' ? 'active' : ''}`}>
+                                     <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path></svg>
+                                    <span className="nav-text">Admin Panel</span>
                                 </a>
                             </li>
                         )}
                     </ul>
                 </div>
                 <div className="sidebar-footer">
-                    <div className="sidebar-user-info">
-                         <img src={currentUser.profilePic || DEFAULT_PROFILE_PIC} alt="Profile" className="sidebar-profile-pic" onClick={() => setCurrentPage('profile')} style={{cursor: 'pointer'}} />
-                        <div>
-                            <p><strong>{currentUser.name}</strong></p>
-                            <p>Roll: {currentUser.rollNumber}</p>
-                        </div>
+                    <div className="sidebar-user-profile">
+                         <img src={currentUser.profilePic || DEFAULT_PROFILE_PIC} alt="Profile" className="sidebar-profile-pic" onClick={() => setCurrentPage('profile')} />
+                         <p className="sidebar-user-name">{currentUser.name}</p>
+                         <p className="sidebar-user-roll">Roll: {currentUser.rollNumber}</p>
                     </div>
                     <button onClick={handleLogout} className="btn-danger">Logout</button>
                 </div>
