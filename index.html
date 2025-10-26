@@ -56,6 +56,23 @@
       display: flex;
       min-height: 100vh;
     }
+    
+    .app-loading-screen {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100vh;
+        text-align: center;
+    }
+    
+    .app-loading-screen h2 {
+        font-family: var(--font-display);
+        color: var(--accent-color);
+        margin-top: var(--spacing-lg);
+        text-shadow: 0 0 8px var(--accent-glow);
+    }
 
     .sidebar {
       width: 250px;
@@ -1395,6 +1412,41 @@
 </head>
 <body>
   <div id="root"></div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    // --- IMPORTANT SETUP STEP ---
+    // 1. Create a project at https://console.firebase.google.com/
+    // 2. In your project, go to "Realtime Database" and create one (start in test mode).
+    // 3. Go to Project Settings > General tab > Your apps > Web app (</>).
+    // 4. Register the app and Firebase will give you this config object.
+    // 5. Replace the placeholder values below with your actual config.
+    const firebaseConfig =  {
+  apiKey: "AIzaSyCiW_CwudgAzmtQIoP4r2ZTfcwSZnO8J9k",
+  authDomain: "nox-ssb-prep.firebaseapp.com",
+  databaseURL: "https://nox-ssb-prep-default-rtdb.firebaseio.com",
+  projectId: "nox-ssb-prep",
+  storageBucket: "nox-ssb-prep.firebasestorage.app",
+  messagingSenderId: "219413596847",
+  appId: "1:219413596847:web:fbe707b674f6f2669fe25a",
+  measurementId: "G-H5NBK3DFSY"
+};
+
+    // Initialize Firebase
+    try {
+        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+        } else {
+            console.warn("Firebase is not configured. Please add your config in index.html.");
+            document.getElementById('root').innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Configuration Needed</h1><p>Please follow the instructions in index.html to configure your Firebase Realtime Database.</p></div>';
+        }
+    } catch(e) {
+        console.error("Firebase initialization error:", e);
+    }
+  </script>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>

@@ -2,9 +2,12 @@ import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
+// Let TypeScript know that the 'firebase' global exists from the script tag
+declare var firebase: any;
+
 const API_KEY = process.env.API_KEY;
 
-// --- UNIFIED DATABASE (localStorage wrapper for a single data object) ---
+// --- UNIFIED DATABASE (Firebase Realtime Database wrapper) ---
 const DB_KEY = 'ssb_app_data';
 
 const getDefaultData = () => ({
@@ -19,21 +22,42 @@ const getDefaultData = () => ({
 });
 
 const db = {
-    load: () => {
-        try {
-            const data = localStorage.getItem(DB_KEY);
-            return data ? JSON.parse(data) : getDefaultData();
-        } catch (e) {
-            console.error("Failed to load data from localStorage", e);
-            return getDefaultData();
-        }
-    },
     save: (data) => {
         try {
-            localStorage.setItem(DB_KEY, JSON.stringify(data));
+            // Check if firebase is initialized before trying to use it
+            if (firebase && firebase.database) {
+                firebase.database().ref(DB_KEY).set(data);
+            }
         } catch (e) {
-            console.error("Failed to save data to localStorage", e);
+            console.error("Failed to save data to Firebase", e);
         }
+    },
+    listen: (callback) => {
+        try {
+             if (firebase && firebase.database) {
+                const dbRef = firebase.database().ref(DB_KEY);
+                dbRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    // If DB is empty, initialize with default data
+                    if (data) {
+                        callback(data);
+                    } else {
+                        const defaultData = getDefaultData();
+                        callback(defaultData);
+                        db.save(defaultData); // Save the initial structure to Firebase
+                    }
+                }, (error) => {
+                    console.error("Firebase listener error:", error);
+                });
+                
+                // Return a function to unsubscribe when the component unmounts
+                return () => dbRef.off('value');
+            }
+        } catch(e) {
+            console.error("Failed to connect to Firebase", e);
+        }
+        // Return an empty unsubscribe function if firebase is not available
+        return () => {};
     }
 };
 
@@ -315,7 +339,7 @@ const Dashboard = ({ user, onManage, onNavigate, onPersonaChange }) => {
                 </div>
             </div>
             <div className="progress-grid" style={{marginTop: 'var(--spacing-lg)'}}>
-                {['TAT', 'WAT', 'SRT', 'SDT', 'OIR', 'GPE', 'Lecturerette', 'Interview'].map(test => <TestHistoryCard key={test} testType={test} results={user.testResults[test]} onViewFeedback={(feedback) => onManage('ViewFeedback', feedback)} />)}
+                {['TAT', 'WAT', 'SRT', 'SDT', 'OIR', 'GPE', 'Lecturerette', 'Interview'].map(test => <TestHistoryCard key={test} testType={test} results={user.testResults?.[test] || []} onViewFeedback={(feedback) => onManage('ViewFeedback', feedback)} />)}
             </div>
              <div className="page-header" style={{marginTop: 'var(--spacing-xl)', fontSize: '1.5rem', borderBottomWidth: '2px'}}>Admin Controls</div>
              <div className="header-actions" style={{flexWrap: 'wrap'}}>
@@ -1474,20 +1498,20 @@ const CommunityPage = ({ currentUser, allUsers, onFriendAction, onSendMessage, c
         return map;
     }, [allUsers]);
 
-    const friends = useMemo(() => currentUser.friends.map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
-    const friendRequests = useMemo(() => currentUser.friendRequests.map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
+    const friends = useMemo(() => (currentUser.friends || []).map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
+    const friendRequests = useMemo(() => (currentUser.friendRequests || []).map(id => usersMap[id]).filter(Boolean), [currentUser, usersMap]);
     
     const selectedFriend = selectedFriendId ? usersMap[selectedFriendId] : null;
     const currentChatHistory = selectedFriendId ? chats[[currentUser.userId, selectedFriendId].sort().join('_')] || [] : [];
     
     const renderFriendStatusButton = (user) => {
-        if (currentUser.friends.includes(user.userId)) {
+        if ((currentUser.friends || []).includes(user.userId)) {
             return <button className="btn btn-secondary" disabled>Friends</button>;
         }
-        if (user.friendRequests.includes(currentUser.userId)) {
+        if ((user.friendRequests || []).includes(currentUser.userId)) {
             return <button className="btn btn-secondary" disabled>Pending</button>;
         }
-        if (currentUser.friendRequests.includes(user.userId)) {
+        if ((currentUser.friendRequests || []).includes(user.userId)) {
             return <button className="btn btn-primary" onClick={() => onFriendAction('accept', user.userId)}>Accept</button>;
         }
         return <button className="btn btn-primary" onClick={() => onFriendAction('add', user.userId)}>Add Friend</button>;
@@ -1695,7 +1719,7 @@ const AdminPanel = ({ allData, onImportData }) => {
 
 // --- MAIN APP ---
 const App = () => {
-    const [appData, setAppData] = useState(db.load());
+    const [appData, setAppData] = useState(null); // Start with null, data will come from Firebase
     const [currentUser, setCurrentUser] = useState(null);
     const [view, setView] = useState('dashboard');
     const [viewedFeedback, setViewedFeedback] = useState(null);
@@ -1703,33 +1727,34 @@ const App = () => {
     const [isInterviewing, setIsInterviewing] = useState(false);
     const [dailyBriefing, setDailyBriefing] = useState({ briefing: null, isLoading: false });
 
+    // Effect to listen for real-time updates from Firebase
     useEffect(() => {
-        db.save(appData);
-    }, [appData]);
-    
-    // This effect synchronizes the `currentUser` state variable with the `appData` "database".
-    // It ensures that any changes made to the user's data are reflected in the UI promptly.
+        const unsubscribe = db.listen(setAppData);
+        return () => unsubscribe(); // Cleanup listener on unmount
+    }, []);
+
+    // Effect to sync currentUser state when appData changes from Firebase
     useEffect(() => {
-        if (currentUser?.userId) {
+        if (currentUser?.userId && appData?.users) {
             const userInDb = appData.users.find(u => u.userId === currentUser.userId);
             if (userInDb) {
-                // By using a deep comparison, we prevent unnecessary re-renders if the user object hasn't actually changed.
+                // Prevent re-renders if the object hasn't changed.
                 if (JSON.stringify(currentUser) !== JSON.stringify(userInDb)) {
                     setCurrentUser(userInDb);
                 }
             } else {
-                // If user is somehow deleted, log them out.
+                // User was deleted from DB, log them out.
                 setCurrentUser(null);
             }
         }
-    }, [appData.users, currentUser?.userId]);
+    }, [appData, currentUser?.userId]);
 
 
+    // Central function to update data. It updates the central DB,
+    // and the listener will propagate changes to all clients.
     const updateAppData = (updater) => {
-        setAppData(prevData => {
-            const newData = updater(prevData);
-            return newData;
-        });
+        const newData = updater(appData);
+        db.save(newData); // Save the new state to Firebase
     };
 
     const checkAndAwardBadges = (user) => {
@@ -1769,38 +1794,44 @@ const App = () => {
 
     const handleLogin = (name, rollNumber) => {
         let user;
-        updateAppData(data => {
-            let existingUser = data.users.find(u => u.rollNumber === rollNumber);
-            if (!existingUser) {
-                user = { 
-                    name, 
-                    rollNumber,
-                    userId: rollNumber,
-                    testResults: {}, 
-                    score: 0, 
-                    piqData: {}, 
-                    persona: 'psychologist', 
-                    unlockedBadges: [],
-                    photo: null,
-                    bio: '',
-                    friends: [],
-                    friendRequests: [],
-                };
-                return { ...data, users: [...data.users, user] };
-            } else {
-                 // Ensure older user objects have new properties
-                user = { 
-                    ...existingUser,
-                    name,
-                    friends: existingUser.friends || [],
-                    friendRequests: existingUser.friendRequests || []
-                };
-                return { ...data, users: data.users.map(u => u.userId === user.userId ? user : u) };
-            }
-        });
-        // Find the user again from the potentially updated data to set the state
-        const finalUserData = appData.users.find(u => u.rollNumber === rollNumber) || user;
-        setCurrentUser(finalUserData);
+        const users = appData?.users || [];
+        const existingUser = users.find(u => u.rollNumber === rollNumber);
+        
+        if (!existingUser) {
+            user = { 
+                name, 
+                rollNumber,
+                userId: rollNumber,
+                testResults: {}, 
+                score: 0, 
+                piqData: {}, 
+                persona: 'psychologist', 
+                unlockedBadges: [],
+                photo: null,
+                bio: '',
+                friends: [],
+                friendRequests: [],
+            };
+            updateAppData(data => ({ ...data, users: [...(data?.users || []), user] }));
+        } else {
+             // Ensure older user objects have new properties and update name by spreading over a default structure.
+            user = { 
+                testResults: {},
+                score: 0,
+                piqData: {},
+                persona: 'psychologist',
+                unlockedBadges: [],
+                photo: null,
+                bio: '',
+                friends: [],
+                friendRequests: [],
+                ...existingUser,
+                name, // Allow name update on login
+                userId: existingUser.userId || rollNumber,
+            };
+            updateAppData(data => ({ ...data, users: (data?.users || []).map(u => u.userId === user.userId ? user : u) }));
+        }
+        setCurrentUser(user);
     };
 
     const updateCurrentUser = (userUpdater) => {
@@ -1877,8 +1908,9 @@ const App = () => {
             const targetUserIndex = newUsers.findIndex(u => u.userId === targetUserId);
             if (currentUserIndex === -1 || targetUserIndex === -1) return data;
     
-            let updatedCurrentUser = { ...newUsers[currentUserIndex] };
-            let updatedTargetUser = { ...newUsers[targetUserIndex] };
+            // Ensure friend/request arrays exist before modification to prevent crashes
+            let updatedCurrentUser = { ...newUsers[currentUserIndex], friends: newUsers[currentUserIndex].friends || [], friendRequests: newUsers[currentUserIndex].friendRequests || [] };
+            let updatedTargetUser = { ...newUsers[targetUserIndex], friends: newUsers[targetUserIndex].friends || [], friendRequests: newUsers[targetUserIndex].friendRequests || [] };
     
             if (action === 'add') {
                 if (!updatedTargetUser.friendRequests.includes(currentUserId) && !updatedTargetUser.friends.includes(currentUserId)) {
@@ -1948,7 +1980,7 @@ const App = () => {
     const handleManage = (modalType, data = null) => { if (modalType === 'ViewFeedback') setViewedFeedback(data); else setActiveModal(modalType); };
     
     const handleContentChange = (type, action, value) => {
-        const contentUpdater = (data) => {
+        updateAppData((data) => {
             const content = { ...data.content };
             const keyMap = { 'TAT': 'tat_images', 'WAT': 'wat_words', 'SRT': 'srt_scenarios', 'Lecturerette': 'lecturerette_topics' };
             const key = keyMap[type];
@@ -1959,11 +1991,19 @@ const App = () => {
             else if (action === 'remove') content[key] = content[key].filter((_, idx) => value !== idx);
     
             return { ...data, content };
-        };
-        updateAppData(contentUpdater);
+        });
     };
     
-
+    // Show loading spinner while waiting for data from Firebase
+    if (!appData) {
+        return (
+            <div className="app-loading-screen">
+                <div className="loading-spinner"></div>
+                <h2>Connecting to the Cloud...</h2>
+            </div>
+        );
+    }
+    
     if (!currentUser) return <LoginPage onLogin={handleLogin} />;
     if (isInterviewing) return <VoiceInterviewSimulator piqData={currentUser.piqData} onComplete={handleInterviewComplete}/>;
 
@@ -1971,7 +2011,7 @@ const App = () => {
         switch (view) {
             case 'dashboard': return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
             case 'profile': return <ProfilePage user={currentUser} onUpdate={handleProfileUpdate} onGeneratePhoto={handleGeneratePhoto} />;
-            case 'community': return <CommunityPage currentUser={currentUser} allUsers={appData.users} onFriendAction={handleFriendAction} onSendMessage={handleSendMessage} chats={appData.chats} calculateOLQScores={calculateOLQScores} />;
+            case 'community': return <CommunityPage currentUser={currentUser} allUsers={appData.users || []} onFriendAction={handleFriendAction} onSendMessage={handleSendMessage} chats={appData.chats || {}} calculateOLQScores={calculateOLQScores} />;
             case 'captain nox': return <CaptainNox user={currentUser} calculateOLQScores={calculateOLQScores} />;
             case 'olq dashboard': return <OLQDashboard user={currentUser} calculateOLQScores={calculateOLQScores} />;
             case 'current affairs': return <CurrentAffairsView onGetBriefing={handleGetBriefing} briefingData={dailyBriefing} />;
@@ -1983,9 +2023,9 @@ const App = () => {
             case 'srt': return <TestRunner testType="SRT" data={appData.content.srt_scenarios} timeLimit={30} onComplete={(r) => handleTestComplete('SRT', r)} />;
             case 'sdt': return <SDTView onComplete={(r) => handleTestComplete('SDT', r)} />;
             case 'lecturerette': return <LectureretteView topics={appData.content.lecturerette_topics} onComplete={(r) => handleTestComplete('Lecturerette', r)} />;
-            case 'leaderboard': return <Leaderboard users={appData.users}/>;
+            case 'leaderboard': return <Leaderboard users={appData.users || []}/>;
             case 'interview': return <InterviewPage user={currentUser} onSavePiq={handleSavePiq} onStartInterview={() => setIsInterviewing(true)} onViewFeedback={fb => setViewedFeedback(fb)} />;
-            case 'admin panel': return <AdminPanel allData={appData} onImportData={setAppData} />;
+            case 'admin panel': return <AdminPanel allData={{...appData, users: appData.users || [], chats: appData.chats || {}}} onImportData={(data) => db.save(data)} />;
             default: return <Dashboard user={currentUser} onManage={handleManage} onNavigate={setView} onPersonaChange={handlePersonaChange}/>;
         }
     };
