@@ -493,8 +493,8 @@ const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [responses, setResponses] = useState([]);
     const [currentResponse, setCurrentResponse] = useState('');
-    const [timeLeft, setTimeLeft] = useState(timeLimit);
-    // FIX: Initialize useRef with null instead of itself to fix "used before its declaration" error.
+    const [timeLeft, setTimeLeft] = useState(() => testType === 'TAT' ? 30 : timeLimit);
+    const [tatStage, setTatStage] = useState(testType === 'TAT' ? 'viewing' : null); // 'viewing' or 'writing'
     const timerRef = useRef<number | null>(null);
 
     const handleNext = useCallback(() => {
@@ -513,6 +513,9 @@ const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
 
         if (currentIndex < data.length - 1) {
             setCurrentIndex(prev => prev + 1);
+            if (testType === 'TAT') {
+                setTatStage('viewing'); // Reset stage for next image
+            }
         } else {
             if (timerRef.current) clearInterval(timerRef.current);
             onComplete(updatedResponses);
@@ -520,28 +523,71 @@ const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
     }, [currentIndex, currentResponse, data, onComplete, responses, testType]);
 
     useEffect(() => {
-        setTimeLeft(timeLimit);
         if (timerRef.current) clearInterval(timerRef.current);
         if (currentIndex >= data.length) return;
 
-        timerRef.current = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    handleNext();
-                    return timeLimit;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        let currentInterval: number;
+
+        if (testType === 'TAT') {
+            if (tatStage === 'viewing') {
+                setTimeLeft(30);
+                currentInterval = window.setInterval(() => {
+                    setTimeLeft(prev => {
+                        if (prev <= 1) {
+                            clearInterval(currentInterval);
+                            setTatStage('writing');
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+            } else if (tatStage === 'writing') {
+                setTimeLeft(240);
+                currentInterval = window.setInterval(() => {
+                    setTimeLeft(prev => {
+                        if (prev <= 1) {
+                            handleNext();
+                            // This value doesn't matter much as the component will re-render for the next item or finish.
+                            return 240; 
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+            }
+        } else { // For WAT and SRT
+            setTimeLeft(timeLimit);
+            currentInterval = window.setInterval(() => {
+                setTimeLeft(prev => {
+                    if (prev <= 1) {
+                        handleNext();
+                        return timeLimit;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        
+        timerRef.current = currentInterval;
+
         return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
+            if (currentInterval) clearInterval(currentInterval);
         };
-    }, [currentIndex, data.length, handleNext, timeLimit]);
+    }, [currentIndex, data.length, handleNext, timeLimit, testType, tatStage]);
 
     const renderTestContent = () => {
         const item = data[currentIndex];
         switch(testType) {
-            case 'TAT': return <img src={item} alt="TAT image" style={{maxWidth: '100%', maxHeight: '400px'}}/>;
+            case 'TAT': 
+                if (tatStage === 'viewing') {
+                    return <img src={item} alt="TAT image" style={{maxWidth: '100%', maxHeight: '400px'}}/>;
+                } else {
+                     return (
+                        <div className="text-center" style={{minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+                            <h2 style={{marginBottom: 'var(--spacing-md)'}}>Picture removed.</h2>
+                            <p>Please write your story now.</p>
+                        </div>
+                    );
+                }
             case 'WAT': return <h2>{item}</h2>;
             case 'SRT': return <p>{item}</p>;
             default: return null;
@@ -550,12 +596,14 @@ const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
 
     const getResponsePlaceholder = () => {
         switch(testType) {
-            case 'TAT': return "Write a story about this picture...";
+            case 'TAT': return "Write a story about the picture you saw...";
             case 'WAT': return "Write a sentence using this word...";
             case 'SRT': return "Describe your reaction to this situation...";
             default: return "Your response...";
         }
     }
+    
+    const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
 
     return (
         <div>
@@ -563,7 +611,15 @@ const TestRunner = ({ testType, data, timeLimit, onComplete }) => {
             <p>Item {currentIndex + 1} of {data.length}</p>
             <div className="card">
                 {renderTestContent()}
-                <p>Time left: {timeLeft}s</p>
+                
+                {testType === 'TAT' ? (
+                    <p style={{fontFamily: 'var(--font-display)', fontSize: '1.2rem', textAlign: 'center', margin: 'var(--spacing-md) 0'}}>
+                        Time for {tatStage}: <span style={{color: 'var(--accent-color)'}}>{formatTime(timeLeft)}</span>
+                    </p>
+                ) : (
+                    <p style={{textAlign: 'center', margin: 'var(--spacing-md) 0'}}>Time left: {timeLeft}s</p>
+                )}
+                
                 <textarea
                     value={currentResponse}
                     onChange={(e) => setCurrentResponse(e.target.value)}
