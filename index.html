@@ -1399,6 +1399,12 @@
     .delete-section .btn-danger {
         width: 100%;
     }
+    
+    .mobile-header,
+    .close-nav-btn,
+    .nav-overlay {
+      display: none;
+    }
 
     /* Keyframe Animations */
     @keyframes spin {
@@ -1482,47 +1488,13 @@
     }
 
     @media (max-width: 768px) {
-      .app-layout {
-        flex-direction: column;
+      body.mobile-nav-is-open {
+        overflow: hidden;
       }
-      .sidebar {
-        width: 100%;
-        height: auto;
-        flex-direction: row;
-        align-items: center;
-        padding: var(--spacing-sm) var(--spacing-md);
-        overflow-x: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--primary-light);
-      }
-      .sidebar::-webkit-scrollbar {
-        height: 4px;
-      }
-      .sidebar::-webkit-scrollbar-thumb {
-        background: var(--primary-light);
-        border-radius: 10px;
-      }
-      .sidebar-header {
-        display: none;
-      }
-      .sidebar-nav {
-        flex-grow: 1;
-        padding: 0;
-      }
-      .sidebar-nav-list {
-        display: flex;
-      }
-      .nav-item {
-        margin: 0;
-        flex-shrink: 0;
-      }
-      .submenu { display: none; } /* Hide submenus on mobile nav bar */
-      .nav-chevron { display: none; }
-      .sidebar-footer {
-        display: none;
-      }
+      
       .main-content {
         padding: var(--spacing-md);
+        padding-top: 84px; /* 60px header + 24px padding */
       }
       .page-header {
         font-size: 2rem;
@@ -1535,15 +1507,100 @@
       .test-stimulus {
         min-height: 40vh;
       }
-      .strengths-weaknesses-grid {
-        grid-template-columns: 1fr;
-      }
       .header-actions {
         width: 100%;
         justify-content: space-around;
       }
       .oir-options {
         grid-template-columns: 1fr;
+      }
+      .interview-container {
+        height: calc(100vh - 200px); /* Adjust height for mobile viewport */
+        min-height: 450px;
+      }
+      
+      /* Mobile Nav Additions */
+      .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--spacing-sm) var(--spacing-md);
+        background-color: var(--primary-mid);
+        border-bottom: 1px solid var(--primary-light);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        height: 60px;
+      }
+      
+      .hamburger-btn {
+        background: none;
+        border: none;
+        color: var(--text-light);
+        cursor: pointer;
+        padding: var(--spacing-sm);
+        z-index: 1; /* To be on top of title */
+      }
+      
+      .hamburger-btn svg {
+        width: 28px;
+        height: 28px;
+        fill: currentColor;
+      }
+      
+      .mobile-header-title {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        color: var(--accent-color);
+        text-shadow: 0 0 5px var(--accent-glow);
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        z-index: 1001;
+        transform: translateX(-100%);
+        width: 280px;
+        max-width: 80vw;
+      }
+      
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      
+      .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .close-nav-btn {
+        display: block;
+        background: none;
+        border: none;
+        color: var(--neutral-light);
+        font-size: 2.5rem;
+        cursor: pointer;
+        padding: 0 var(--spacing-sm);
+        line-height: 1;
+      }
+      
+      .nav-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.6);
+        z-index: 1000;
       }
     }
 

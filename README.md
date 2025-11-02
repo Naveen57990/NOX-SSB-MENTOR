@@ -1,79 +1,12 @@
-🪖 SSB Preparation App
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-> AI-powered platform to practice real SSB psychological tests and get instant personalized feedback like a real assessor.
+# Run and deploy your AI Studio app
 
+This contains everything you need to run your app locally.
 
-
-
----
-
-🎯 Overview
-
-The app simulates all SSB Psychological Tests:
-
-TAT (Thematic Apperception Test)
-
-WAT (Word Association Test)
-
-SRT (Situation Reaction Test)
-
-SDT (Self Description Test)
-
-
-It gives AI-based feedback — identifying OLQs, weak areas, and improvement tips with progress tracking.
-
-
----
-
-⚙️ Main Features
-
-🧠 AI Feedback after every test
-
-📊 Progress tracking & leaderboard
-
-📸 TAT images, word & situation database
-
-💬 Support for offline and online usage
-
-
-
----
-
-🚀 How It Works
-
-1. Choose a test (TAT, WAT, SRT, SDT)
-
-
-2. Write your response
-
-
-3. AI evaluates it for OLQs & improvement
-
-
-4. Track your growth in dashboard
-
-
-
-
----
-
-🌱 Future Updates
-
-Add GTO simulator
-
-Offline AI mode
-
-More test sets & user analytics
-
-Cpss simulator
-
-
-
----
-
-⭐ Made by Naveen 5799 — empowering future officers with AI.
-
-
+View your app in AI Studio: https://ai.studio/apps/drive/1y2wpG6TqhZBjBxlJRvqL1YoFDuhCZ2xR
 
 ## Run Locally
 
@@ -85,5 +18,3 @@ Cpss simulator
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
-
-***for direct usage ===>https://nox-ssb-prep.vercel.app/

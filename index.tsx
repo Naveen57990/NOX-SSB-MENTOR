@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, LiveServerMessage, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -1091,7 +1092,8 @@ const LectureretteView = ({ topics, onComplete }) => {
 
     useEffect(() => {
         if (timeLeft > 0 && (stage === 'preparing' || stage === 'speaking')) {
-            timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+            // FIX: Use window.setTimeout to ensure it returns a number, resolving the 'Timeout' type error.
+            timerRef.current = window.setTimeout(() => setTimeLeft(t => t - 1), 1000);
         } else if (timeLeft === 0 && stage === 'preparing') {
             startSpeaking();
         } else if (timeLeft === 0 && stage === 'speaking') {
@@ -1481,7 +1483,8 @@ const RadarChart = ({ data }) => {
                 return (
                     <g key={i}>
                         <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} className="radar-chart-axis" />
-                        <text x={labelPoint.x} y={labelPoint.y} dy={dy} className="radar-chart-label" style={{ textAnchor }}>
+                        {/* FIX: Moved textAnchor from the style object to a direct attribute to fix the type error. */}
+                        <text x={labelPoint.x} y={labelPoint.y} dy={dy} className="radar-chart-label" textAnchor={textAnchor}>
                             {d.name}
                         </text>
                     </g>
@@ -1835,6 +1838,7 @@ const App = () => {
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
     const [currentAffairsData, setCurrentAffairsData] = useState({ briefing: null, isLoading: false });
     const [openNavSections, setOpenNavSections] = useState({ psychology: true, gto: true, knowledge: true });
+    const [isNavOpen, setIsNavOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = db.listen(setAppData);
@@ -1864,6 +1868,18 @@ const App = () => {
             }
         }
     }, [appData]);
+    
+    // Lock body scroll when mobile nav is open
+    useEffect(() => {
+        if (isNavOpen) {
+            document.body.classList.add('mobile-nav-is-open');
+        } else {
+            document.body.classList.remove('mobile-nav-is-open');
+        }
+        return () => {
+            document.body.classList.remove('mobile-nav-is-open');
+        };
+    }, [isNavOpen]);
 
     const handleLogin = (name, rollNumber) => {
         const existingUser = users.find(u => u.rollNumber === rollNumber);
@@ -2107,6 +2123,12 @@ const App = () => {
         setOpenNavSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
     };
 
+    const handleNavClick = (pageId) => {
+        setCurrentPage(pageId);
+        setCurrentTest(null);
+        setIsNavOpen(false);
+    };
+
     const renderPage = () => {
         if (currentTest) {
             switch(currentTest.type) {
@@ -2122,7 +2144,7 @@ const App = () => {
         }
 
         switch(currentPage) {
-            case 'dashboard': return <Dashboard user={currentUser} onManage={handleManageContent} onNavigate={setCurrentPage} onPersonaChange={(persona) => updateUser({ persona })} />;
+            case 'dashboard': return <Dashboard user={currentUser} onManage={handleManageContent} onNavigate={handleNavClick} onPersonaChange={(persona) => updateUser({ persona })} />;
             case 'leaderboard': return <Leaderboard users={users} />;
             case 'profile': return <ProfilePage user={currentUser} onUpdateUser={updateUser} />;
             case 'interview': return <InterviewPage user={currentUser} onSavePiq={handleSavePiq} onStartInterview={() => setCurrentTest({ type: 'Interview' })} onViewFeedback={(fb) => { setCurrentModal('ViewFeedback'); setModalData(fb); }}/>;
@@ -2148,7 +2170,7 @@ const App = () => {
                         <button className="btn btn-primary" onClick={() => setCurrentTest({ type: currentPage.toUpperCase() })}>Start Test</button>
                     </div>
                 );
-            default: return <Dashboard user={currentUser} onManage={handleManageContent} onNavigate={setCurrentPage} onPersonaChange={(persona) => updateUser({ persona })} />;
+            default: return <Dashboard user={currentUser} onManage={handleManageContent} onNavigate={handleNavClick} onPersonaChange={(persona) => updateUser({ persona })} />;
         }
     };
     
@@ -2195,8 +2217,17 @@ const App = () => {
     
     return (
         <div className="app-layout">
-            <nav className="sidebar">
-                <div className="sidebar-header">NOX</div>
+            <div className="mobile-header">
+                <button className="hamburger-btn" onClick={() => setIsNavOpen(true)}>
+                    <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+                </button>
+                <div className="mobile-header-title">NOX</div>
+            </div>
+            <nav className={`sidebar ${isNavOpen ? 'mobile-open' : ''}`}>
+                <div className="sidebar-header">
+                    NOX
+                    <button className="close-nav-btn" onClick={() => setIsNavOpen(false)}>&times;</button>
+                </div>
                 <div className="sidebar-nav">
                      <ul className="sidebar-nav-list">
                         {navLinks.map(link => (
@@ -2206,8 +2237,7 @@ const App = () => {
                                     if (link.children) {
                                         toggleNavSection(link.id);
                                     } else {
-                                        setCurrentPage(link.id);
-                                        setCurrentTest(null);
+                                        handleNavClick(link.id);
                                     }
                                 }} className={`nav-link ${(currentPage === link.id || link.children?.some(c => c.id === currentPage)) ? 'active' : ''}`}>
                                     <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d={link.icon}></path></svg>
@@ -2218,7 +2248,7 @@ const App = () => {
                                     <ul className={`submenu ${openNavSections[link.id] ? 'open' : ''}`}>
                                         {link.children.map(child => (
                                             <li key={child.id} className="nav-item-child">
-                                                <a href="#" onClick={(e) => {e.preventDefault(); setCurrentPage(child.id); setCurrentTest(null);}} className={`nav-link-child ${currentPage === child.id ? 'active' : ''}`}>
+                                                <a href="#" onClick={(e) => {e.preventDefault(); handleNavClick(child.id);}} className={`nav-link-child ${currentPage === child.id ? 'active' : ''}`}>
                                                     {child.name}
                                                 </a>
                                             </li>
@@ -2229,8 +2259,8 @@ const App = () => {
                         ))}
                          {currentUser.rollNumber === "1" && (
                              <li className="nav-item">
-                                <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage('admin'); }} className={`nav-link ${currentPage === 'admin' ? 'active' : ''}`}>
-                                     <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path></svg>
+                                <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('admin'); }} className={`nav-link ${currentPage === 'admin' ? 'active' : ''}`}>
+                                     <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path></svg>
                                     <span className="nav-text">Admin Panel</span>
                                 </a>
                             </li>
@@ -2239,7 +2269,7 @@ const App = () => {
                 </div>
                 <div className="sidebar-footer">
                     <div className="sidebar-user-profile">
-                         <img src={currentUser.profilePic || DEFAULT_PROFILE_PIC} alt="Profile" className="sidebar-profile-pic" onClick={() => setCurrentPage('profile')} />
+                         <img src={currentUser.profilePic || DEFAULT_PROFILE_PIC} alt="Profile" className="sidebar-profile-pic" onClick={() => handleNavClick('profile')} />
                          <p className="sidebar-user-name">{currentUser.name}</p>
                          <p className="sidebar-user-roll">Roll: {currentUser.rollNumber}</p>
                     </div>
@@ -2249,6 +2279,7 @@ const App = () => {
             <main className="main-content">
                 {renderPage()}
             </main>
+            {isNavOpen && <div className="nav-overlay" onClick={() => setIsNavOpen(false)}></div>}
             {renderModal()}
         </div>
     );
