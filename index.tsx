@@ -3039,14 +3039,14 @@ Your task:
 // Fix: Added explicit checks to ensure that only non-empty transcript entries are added to the state.
 // This prevents malformed {} objects from being pushed to the transcript array, resolving the TypeScript error.
                             setTranscript(prev => {
-                                const newTranscript = [...prev];
-                                if (userInput && typeof userInput === 'string') {
-                                    newTranscript.push({ speaker: 'user', text: userInput });
+                                const newEntries: { speaker: string, text: string }[] = [];
+                                if (userInput) {
+                                    newEntries.push({ speaker: 'user', text: userInput });
                                 }
-                                if (aiOutput && typeof aiOutput === 'string') {
-                                    newTranscript.push({ speaker: 'ai', text: aiOutput });
+                                if (aiOutput) {
+                                    newEntries.push({ speaker: 'ai', text: aiOutput });
                                 }
-                                return newTranscript;
+                                return newEntries.length > 0 ? [...prev, ...newEntries] : prev;
                             });
                             
                             currentInputTranscriptionRef.current = '';
