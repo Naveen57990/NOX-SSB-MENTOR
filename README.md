@@ -1,12 +1,58 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+🪖 Nox SSB Mentor
 
-# Run and deploy your AI Studio app
+> An AI-powered SSB preparation app that simulates real SSB tests and interviews to help aspirants analyze and improve their Officer-Like Qualities (OLQs).
 
-This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1y2wpG6TqhZBjBxlJRvqL1YoFDuhCZ2xR
+
+---
+
+🎯 Features
+
+🧠 Psych Tests: TAT, WAT, SRT, SDT with instant AI feedback.
+
+🪖 GTO Section:
+
+50 Verbal + 50 Non-Verbal OIR questions (30 min each).
+
+Lecturette practice with 2.5 min prep + 3 min speech timer + AI speech feedback.
+
+
+🎙️ Interview Section:
+
+Dynamic, realistic questions every time.
+
+Deep AI assessment on confidence, communication & logic.
+
+
+📊 Progress tracking & leaderboard.
+
+
+
+---
+
+⚙️ Tech Stack
+
+React / Flutter • Flask / Node.js • SQLite • Google AI Studio (Gemini) • Vercel
+
+
+---
+
+🚀 How It Works
+
+1. Choose a test or interview.
+
+
+2. Write or speak your response.
+
+
+3. AI evaluates performance and saves feedback for improvement.
+
+
+
+
+---
+
+⭐ Created by Naveen S 5799– Empowering future officers with AI 🇮🇳
 
 ## Run Locally
 
