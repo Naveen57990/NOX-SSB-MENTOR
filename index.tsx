@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type, LiveServerMessage, Modality, Blob, GenerateContentResponse } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -16,6 +17,21 @@ declare global {
 
 
 const API_KEY = process.env.API_KEY;
+
+// --- Lazy Initializer for AI SDK ---
+// This prevents the app from crashing on startup if the API_KEY is not set.
+let ai;
+const getAI = () => {
+    if (!ai) {
+        if (!API_KEY) {
+            // This is a safeguard; the main App component will render an error message.
+            throw new Error("Gemini API key not configured.");
+        }
+        ai = new GoogleGenAI({ apiKey: API_KEY });
+    }
+    return ai;
+};
+
 
 // --- UNIFIED DATABASE (Firebase Realtime Database wrapper) ---
 const DB_KEY = 'ssb_app_data';
@@ -37,8 +53,11 @@ const getDefaultData = () => ({
 const db = {
     save: (data) => {
         try {
-            if (firebase && firebase.database) {
+            // FIX: Check if Firebase app is initialized before trying to save.
+            if (firebase && firebase.apps && firebase.apps.length > 0) {
                 firebase.database().ref(DB_KEY).set(data);
+            } else {
+                console.warn("Firebase not initialized. Data was not saved.");
             }
         } catch (e) {
             console.error("Failed to save data to Firebase", e);
@@ -46,7 +65,8 @@ const db = {
     },
     listen: (callback) => {
         try {
-             if (firebase && firebase.database) {
+            // FIX: Check if Firebase app is initialized before trying to listen.
+            if (firebase && firebase.apps && firebase.apps.length > 0) {
                 const dbRef = firebase.database().ref(DB_KEY);
                 dbRef.on('value', (snapshot) => {
                     const data = snapshot.val();
@@ -77,6 +97,10 @@ const db = {
                 });
                 
                 return () => dbRef.off('value');
+            } else {
+                // This path is taken when firebaseConfig is a placeholder.
+                // Throw an error to be caught, which will log "Failed to connect" and fallback gracefully.
+                throw new Error("Firebase app not initialized. Check your configuration in index.html.");
             }
         } catch(e) {
             console.error("Failed to connect to Firebase", e);
@@ -206,7 +230,6 @@ async function decodeAudioData(data, ctx, sampleRate, numChannels) {
 
 
 // --- AI INTEGRATION ---
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 // Helper to convert file to a Part for the Gemini API
 async function fileToGenerativePart(file) {
@@ -277,7 +300,7 @@ Final Summary: [Brief overall assessment of OLQs demonstrated, strengths, and we
     }
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
             model: model,
             contents: contents,
             config: {
@@ -383,7 +406,7 @@ const getAIAssessment = async (testType, data): Promise<AIAssessmentFeedback> =>
             };
 
             try {
-                const response = await ai.models.generateContent({
+                const response = await getAI().models.generateContent({
                     model: 'gemini-2.5-pro',
                     contents: {parts: [{text: content}]},
                     config: {
@@ -416,7 +439,7 @@ const getAIAssessment = async (testType, data): Promise<AIAssessmentFeedback> =>
             };
 
             try {
-                const response = await ai.models.generateContent({
+                const response = await getAI().models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents: {parts: [{text: content}]},
                     config: {
@@ -438,7 +461,7 @@ const getAIAssessment = async (testType, data): Promise<AIAssessmentFeedback> =>
     }
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
             model: 'gemini-2.5-pro',
             contents: {parts: [{text: content}]},
             config: {
@@ -459,7 +482,7 @@ const getAIAssessment = async (testType, data): Promise<AIAssessmentFeedback> =>
 
 const getNewsUpdate = async (topic) => {
     try {
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `Provide a concise summary of the latest news and key developments on the topic: "${topic}". Include 3-4 important bullet points. Format it nicely for display using Markdown.`,
         });
@@ -472,7 +495,7 @@ const getNewsUpdate = async (topic) => {
 
 const getTopicBriefing = async (topic) => {
     try {
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
             model: 'gemini-2.5-pro',
             contents: `Provide a structured briefing on the topic: "${topic}". The briefing should be suitable for a 3-minute talk (lecturerette). Structure it with an introduction, main body with 3-4 key points, and a conclusion.`,
         });
@@ -613,6 +636,19 @@ const LoadingSpinner = ({ text }) => (
 );
 
 const App = () => {
+    // CRITICAL: Check for API Key before rendering the app.
+    // This prevents the app from crashing with a blank screen if the key is missing.
+    if (!API_KEY) {
+        return (
+            <div className="app-loading-screen">
+                <h2 style={{ color: 'var(--danger-color)' }}>Configuration Error</h2>
+                <p style={{ color: 'var(--neutral-light)', maxWidth: '500px', margin: '1rem' }}>
+                    The Gemini API Key is missing. Please add it as an environment variable named <strong>API_KEY</strong> in your hosting provider's settings (e.g., Vercel).
+                </p>
+            </div>
+        );
+    }
+
     const { data, saveData } = useData();
     const { currentUser, login, logout, signup, updateUser, error, sendFriendRequest, handleFriendRequest } = useAuth(data, saveData);
     const [currentPage, setCurrentPage] = useState('dashboard');
@@ -2272,7 +2308,7 @@ const CurrentAffairs = () => {
         setIsGeneralLoading(true);
         setGeneralNews('');
         try {
-            const response = await ai.models.generateContent({
+            const response = await getAI().models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: { parts: [{ text: `Summarize the top 5 most important recent news headlines (national and international) that are relevant for an Indian Armed Forces (SSB) aspirant. For each headline, provide a 2-3 sentence summary. Format the entire response nicely using Markdown.`}]},
             });
@@ -2578,8 +2614,9 @@ const TATImageEditor = ({ items, onAdd, onDelete }) => {
 
         if (fileInput) {
             try {
-                if (!firebase.storage) {
-                    throw new Error("Firebase Storage is not initialized.");
+                // FIX: Add robust check for Firebase initialization before using storage.
+                if (!firebase || !firebase.apps || firebase.apps.length === 0 || !firebase.storage) {
+                    throw new Error("Firebase Storage is not initialized. Please configure Firebase in index.html.");
                 }
                 const storageRef = firebase.storage().ref();
                 const fileName = `tat_images/${Date.now()}_${fileInput.name}`;
@@ -2959,7 +2996,7 @@ Your task:
 6.  **Start the interview** by saying: "Alright ${user.name}, let's begin. Tell me something about yourself, your background, and your education."
 7.  After about 10-15 questions covering various aspects, **conclude the interview** by saying: "That will be all. Thank you."`;
 
-            const sessionPromise = ai.live.connect({
+            const sessionPromise = getAI().live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-09-2025',
                 callbacks: {
                     onopen: () => {
@@ -2969,8 +3006,15 @@ Your task:
                          
                          scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
                             const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+// Fix: Corrected audio processing logic to prevent clipping and updated the comment to be more accurate.
+// Replaced the direct multiplication with a safer method that clamps the values to the valid 16-bit integer range.
+                            const l = inputData.length;
+                            const int16 = new Int16Array(l);
+                            for (let i = 0; i < l; i++) {
+                                int16[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+                            }
                             const pcmBlob = {
-                                data: encode(new Uint8Array(new Int16Array(inputData.map(x => x * 32768)).buffer)),
+                                data: encode(new Uint8Array(int16.buffer)),
                                 mimeType: 'audio/pcm;rate=16000',
                             };
                             sessionPromise.then((session) => {
@@ -2981,8 +3025,6 @@ Your task:
                         scriptProcessorRef.current.connect(inputAudioContextRef.current.destination);
                     },
                     onmessage: async (message) => {
-                        // FIX: The original `if/else if` could miss transcriptions if a message contained both. Changed to two `if` statements.
-                        // Fix: Defensively check for `text` property on transcription objects.
                         if (message.serverContent?.outputTranscription?.text) {
                             currentOutputTranscriptionRef.current += message.serverContent.outputTranscription.text;
                         }
@@ -2994,10 +3036,16 @@ Your task:
                             const userInput = currentInputTranscriptionRef.current.trim();
                             const aiOutput = currentOutputTranscriptionRef.current.trim();
                             
+// Fix: Added explicit checks to ensure that only non-empty transcript entries are added to the state.
+// This prevents malformed {} objects from being pushed to the transcript array, resolving the TypeScript error.
                             setTranscript(prev => {
                                 const newTranscript = [...prev];
-                                if (userInput) newTranscript.push({ speaker: 'user', text: userInput });
-                                if (aiOutput) newTranscript.push({ speaker: 'ai', text: aiOutput });
+                                if (userInput && typeof userInput === 'string') {
+                                    newTranscript.push({ speaker: 'user', text: userInput });
+                                }
+                                if (aiOutput && typeof aiOutput === 'string') {
+                                    newTranscript.push({ speaker: 'ai', text: aiOutput });
+                                }
                                 return newTranscript;
                             });
                             
@@ -3036,9 +3084,8 @@ Your task:
                     responseModalities: [Modality.AUDIO],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
                     systemInstruction: systemInstruction,
-                    // FIX: Satisfy TypeScript error by adding 'text' property to transcription configs.
-                    inputAudioTranscription: { text: '' },
-                    outputAudioTranscription: { text: '' },
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
                 },
             });
             sessionRef.current = await sessionPromise;
