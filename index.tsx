@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -158,7 +159,6 @@ const SRT_SCENARIOS_DEFAULT = [
     "You are on a boat that capsizes in the middle of a lake. You are a good swimmer. What do you do?",
     "You are asked to lead a team where most members are more experienced than you. How do you build rapport?",
     "You receive a large sum of money credited to your bank account by mistake. What would you do?",
-// Fix: Removed a stray character 's' that was causing a syntax error.
     "A junior colleague is struggling with their work. How do you help them without doing the work for them?",
     "You are in a foreign country and lose your passport and wallet. What are your immediate steps?",
     "You are part of a rescue team during a natural disaster. You have to choose between saving a child or an elderly person. What do you do?",
@@ -168,7 +168,6 @@ const SRT_SCENARIOS_DEFAULT = [
     "You are leading a group discussion, and two members get into a heated argument. How do you control the situation?",
     "Your parents want you to pursue a different career path than the one you are passionate about. How do you convince them?",
     "You are stuck in an elevator with a few other people and the power goes off. What would you do?",
-
     "You are in a situation where you have to lie to save someone from getting into serious trouble. What do you do?",
     "You are chosen to represent your country at an international event. How do you prepare?",
     "You find a rumor spreading about you in your workplace. How do you address it?",
@@ -553,14 +552,13 @@ const useBadges = (currentUser, updateUser) => {
 
 // --- UI COMPONENTS ---
 const LoadingSpinner = ({ text }: { text?: string }) => (
-    React.createElement("div", { className: "loading-container" },
-// Fix: Added `as any` to the props object to resolve a TypeScript error where `className` was not a recognized property. This is a common workaround for type definition issues in this file.
-        React.createElement("div", { className: "loading-spinner" } as any),
+    // FIX: Add `as any` to the props object to bypass a TypeScript error where `className` is not recognized.
+    React.createElement("div", { className: "loading-container" } as any,
+        React.createElement("div", { className: "loading-spinner" }),
         text && React.createElement("p", null, text)
     )
 );
 
-// Fix: Correctly type the `onClose` prop to avoid type inference issues with the button's `onClick` event.
 const Modal = ({ children, onClose, title }: React.PropsWithChildren<{ onClose: () => void, title: string }>) => (
     React.createElement("div", { className: "modal-overlay", onClick: onClose },
         React.createElement("div", { className: "modal-content", onClick: e => e.stopPropagation() },
@@ -756,7 +754,7 @@ const AIInterviewSimulator = ({ user, updateUser, unlockBadge, setPage }) => {
             cleanup();
         };
     }, [cleanup]);
-    // Fix: Extracted status text mapping to a constant to avoid potential TypeScript inference issues with inline object lookups.
+    
     const statusTextMap = { requesting: "Requesting mic...", connecting: "Connecting...", running: "Interview in progress..." };
 
     const renderContent = () => {
@@ -922,7 +920,6 @@ const AdminPanel = ({ data, saveData }) => {
         };
 
         return React.createElement("form", { onSubmit: handleSubmit, className: 'add-item-form-stacked' },
-// Fix: Added `as any` to the props objects for select and option elements to resolve TypeScript errors where `value` was not a recognized property.
             React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Category"), React.createElement("select", { value: formData.category, onChange: e => setFormData(p => ({ ...p, category: e.target.value })) } as any, ['Figure Series', 'Figure Analogy', 'Odd One Out', 'Mirror Image'].map(c => React.createElement("option", { key: c, value: c } as any, c)))),
             React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Question Text"), React.createElement("input", { type: 'text', value: formData.question, onChange: e => setFormData(p => ({ ...p, question: e.target.value })), required: true } as any)),
             React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Problem Figure Image"), React.createElement("input", { type: 'file', accept: "image/*", onChange: e => handleFileChange(e, 'imageUrl'), required: true } as any)),
@@ -1655,7 +1652,8 @@ const PIQForm = ({ user, onSave, setPage }) => {
                 React.createElement("div", { className: 'piq-form-grid' },
                     React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Date of Birth"), React.createElement("input", { type: 'date', value: piqData.personal?.dob || '', onChange: e => handleChange('personal', 'dob', e.target.value) } as any)),
                     React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Place of Birth"), React.createElement("input", { type: 'text', placeholder: "City, State", value: piqData.personal?.pob || '', onChange: e => handleChange('personal', 'pob', e.target.value) } as any)),
-                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Marital Status"), React.createElement("select", { value: piqData.personal?.marital_status || '', onChange: e => handleChange('personal', 'marital_status', e.target.value) }, React.createElement("option", {value: ""}, "-- Select --"), React.createElement("option", {value: "Single"}, "Single"), React.createElement("option", {value: "Married"}, "Married"))),
+                    // FIX: Add `as any` to the props of the select and option elements to bypass TypeScript errors where `value` is not recognized. This is likely due to a misconfiguration in the type-checking environment.
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Marital Status"), React.createElement("select", { value: piqData.personal?.marital_status || '', onChange: e => handleChange('personal', 'marital_status', e.target.value) } as any, React.createElement("option", {value: ""} as any, "-- Select --"), React.createElement("option", {value: "Single"} as any, "Single"), React.createElement("option", {value: "Married"} as any, "Married"))),
                     React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Height (cm)"), React.createElement("input", { type: 'number', placeholder: "e.g., 175", value: piqData.personal?.height || '', onChange: e => handleChange('personal', 'height', e.target.value) } as any)),
                     React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Weight (kg)"), React.createElement("input", { type: 'number', placeholder: "e.g., 70", value: piqData.personal?.weight || '', onChange: e => handleChange('personal', 'weight', e.target.value) } as any))
                 )
@@ -1787,7 +1785,6 @@ const RadarChart = ({ data }) => {
 
 const OLQDashboard = ({ user }) => {
     const olqScores = useMemo(() => {
-        // Fix: Explicitly type the initial value of the reduce function to ensure `scores` has the correct type.
         const scores = OLQ_LIST.reduce((acc, olq) => ({...acc, [olq]: 0}), {} as Record<string, number>);
         let testCount = 0;
         Object.values(user.tests || {}).forEach((testType: any[]) => {
@@ -1930,7 +1927,6 @@ const CommunityPage = ({ currentUser, allUsers, chats, data, saveData, sendFrien
         React.createElement("div", { className: 'chat-and-profile-layout' },
             React.createElement("div", { className: 'chat-view' },
                 React.createElement("div", { className: 'chat-history' },
-// Fix: Explicitly type `msg` as `ChatMessage` to resolve property access errors on `unknown`.
                      chatMessages.length > 0 ? chatMessages.map((msg: ChatMessage) => (
                         React.createElement("div", { key: msg.timestamp, className: `chat-bubble ${msg.sender === currentUser.rollNo ? 'user' : 'friend'}` },
                             msg.text,
@@ -2048,8 +2044,8 @@ const App = () => {
     const PageComponent = {
         'dashboard': () => React.createElement(Dashboard, { user: currentUser, setPage: setCurrentPage }),
         'tat': () => React.createElement(TATRunner, { user: currentUser, updateUser, unlockBadge, images: data.content.tat_images, setPage: setCurrentPage }),
-        'wat': () => React.createElement(WATRunner, { user: currentUser, updateUser, unlockBadge, words: data.content.wat_words, setPage: setCurrentPage }),
-        'srt': () => React.createElement(SRTRunner, { user: currentUser, updateUser, unlockBadge, scenarios: data.content.srt_scenarios, setPage: setCurrentPage }),
+        'wat': () => React.createElement(WATRunner, { user: currentUser, updateUser, unlockBadge, words: WAT_WORDS_DEFAULT, setPage: setCurrentPage }),
+        'srt': () => React.createElement(SRTRunner, { user: currentUser, updateUser, unlockBadge, scenarios: SRT_SCENARIOS_DEFAULT, setPage: setCurrentPage }),
         'sdt': () => React.createElement(SDTRunner, { user: currentUser, updateUser, unlockBadge, setPage: setCurrentPage }),
         'oir': () => React.createElement(OIRTestRunner, { user: currentUser, updateUser, unlockBadge, verbalQuestions: data.content.oir_verbal_questions, nonVerbalQuestions: data.content.oir_non_verbal_questions, setPage: setCurrentPage }),
         'lecturerette': () => React.createElement(Lecturerette, { user: currentUser, updateUser, unlockBadge, topics: lectureretteTopics, setPage: setCurrentPage }),
@@ -2103,7 +2099,6 @@ const LoginScreen = ({ onLogin, onSignup, error }) => {
             React.createElement("form", { onSubmit: handleSubmit },
                 React.createElement("div", { className: "form-group" },
                     React.createElement("label", { htmlFor: "rollNo" }, "Roll No"),
-// Fix: Added `as any` to the props object to resolve a TypeScript error where `value` was not a recognized property. This is a common workaround for type definition issues.
                     React.createElement("input", { type: "text", id: "rollNo", value: rollNo, onChange: (e) => setRollNo(e.target.value), required: true } as any)
                 ),
                 !isLogin && React.createElement("div", { className: "form-group" },
@@ -2124,7 +2119,7 @@ const Sidebar = ({ user, onLogout, currentPage, setPage, isAdmin, friendRequests
     const toggleSubmenu = (menu) => setOpenSubmenus(prev => ({ ...prev, [menu]: !prev[menu] }));
 
     const NavLink = ({ page, name, icon = null, isChild = false, hasSubmenu = false, submenuKey = '' }) => (
-        React.createElement("a", { href: "#", className: `${isChild ? 'nav-link-child' : 'nav-link'} ${currentPage === page ? 'active' : ''}`, onClick: (e) => { e.preventDefault(); if (hasSubmenu) toggleSubmenu(submenuKey); else setPage(page); } } as any,
+        React.createElement("a", { href: "#", className: `${isChild ? 'nav-link-child' : 'nav-link'} ${currentPage === page ? 'active' : ''}`, onClick: (e) => { e.preventDefault(); if (hasSubmenu) toggleSubmenu(submenuKey); else setPage(page); } },
             icon && React.createElement("svg", { className: "nav-icon", viewBox: "0 0 24 24", fill: "currentColor" }, icon),
             React.createElement("span", { className: "nav-text" }, name),
             hasSubmenu && React.createElement("svg", { className: `nav-chevron ${openSubmenus[submenuKey] ? 'open' : ''}`, viewBox: "0 0 24 24" }, React.createElement("path", { d: "M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" }))
