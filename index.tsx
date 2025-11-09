@@ -1,5 +1,3 @@
-
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -14,6 +12,13 @@ declare global {
         SpeechRecognition: any;
         webkitAudioContext: any;
     }
+}
+
+// Fix: Define an interface for chat messages to resolve typing errors.
+interface ChatMessage {
+    sender: string;
+    text: string;
+    timestamp: string;
 }
 
 
@@ -119,7 +124,7 @@ const TAT_IMAGES_DEFAULT = [
     "https://images.weserv.nl/?url=i.imgur.com/k9f7b1s.jpeg",
     "https://images.weserv.nl/?url=i.imgur.com/5J3e2eF.png"
 ];
-const WAT_WORDS_DEFAULT = ['Duty', 'Courage', 'Team', 'Defeat', 'Lead', 'Responsibility', 'Friend', 'Failure', 'Order', 'Discipline', 'Work', 'Army', 'Risk', 'Success', 'Challenge', 'Honour', 'Sacrifice', 'Tension', 'Brave', 'Win', 'Attack', 'Weapon', 'Strategy', 'Calm', 'Confidence', 'Obstacle', 'Cooperate', 'Help', 'Officer', 'System', 'Possible', 'Worry', 'Afraid', 'Nervous', 'Difficult', 'Obey', 'Command', 'Follow', 'Unity', 'Effort', 'Aim', 'Goal', 'Serious', 'Mature', 'Peace', 'War', 'Nation', 'Sports', 'Love', 'Death'];
+const WAT_WORDS_DEFAULT = ['Duty', 'Courage', 'Team', 'Defeat', 'Lead', 'Responsibility', 'Friend', 'Failure', 'Order', 'Discipline', 'Work', 'Army', 'Risk', 'Success', 'Challenge', 'Honour', 'Sacrifice', 'Tension', 'Brave', 'Win', 'Attack', 'Weapon', 'Strategy', 'Calm', 'Confidence', 'Obstacle', 'Cooperate', 'Help', 'Officer', 'System', 'Possible', 'Worry', 'Afraid', 'Nervous', 'Difficult', 'Obey', 'Command', 'Follow', 'Unity', 'Effort', 'Aim', 'Goal', 'Serious', 'Mature', 'Peace', 'War', 'Nation', 'Sports', 'Love', 'Death', 'Society', 'Future', 'Choice', 'Pressure', 'Mistake', 'Greed', 'Time', 'Money', 'Power', 'Health'];
 const SRT_SCENARIOS_DEFAULT = [
     'You are on your way to an important exam and you see an accident. You are the first person to arrive. What would you do?', 
     'During a group task, your team members are not cooperating. What would you do?',
@@ -138,9 +143,9 @@ const OIR_VERBAL_QUESTIONS_BANK = [
     ...Array.from({ length: 45 }, (_, i) => ({
       type: 'verbal',
       category: ['Series Completion', 'Analogy', 'Coding-Decoding', 'Odd One Out'][i % 4],
-      question: `Sample Verbal Question ${i + 6}.`,
-      options: [`Option A`, `Option B`, `Correct Answer`, `Option D`],
-      answer: `Correct Answer`
+      question: `Sample Verbal Question ${i + 6}. This is a placeholder. What is 2+${i}?`,
+      options: [`${i+1}`, `${i+3}`, `${i+2}`, `${i+4}`],
+      answer: `${i+2}`
     }))
 ];
 const OIR_NON_VERBAL_QUESTIONS_BANK = [
@@ -482,7 +487,6 @@ const useBadges = (currentUser, updateUser) => {
 
 
 // --- UI COMPONENTS ---
-// FIX: Added type for the 'text' prop to help TypeScript's type inference.
 const LoadingSpinner = ({ text }: { text?: string }) => (
     React.createElement("div", { className: "loading-container" },
         React.createElement("div", { className: "loading-spinner" }),
@@ -490,7 +494,6 @@ const LoadingSpinner = ({ text }: { text?: string }) => (
     )
 );
 
-// FIX: Added types for component props using React.PropsWithChildren to correctly handle the 'children' prop.
 const Modal = ({ children, onClose, title }: React.PropsWithChildren<{ onClose: any, title: string }>) => (
     React.createElement("div", { className: "modal-overlay", onClick: onClose },
         React.createElement("div", { className: "modal-content", onClick: e => e.stopPropagation() },
@@ -573,7 +576,6 @@ const AIInterviewSimulator = ({ user, updateUser, unlockBadge, setPage }) => {
     const scriptProcessorRef = useRef(null);
     const mediaStreamSourceRef = useRef(null);
     const streamRef = useRef(null);
-    // FIX: Typed the Set to hold AudioBufferSourceNode to allow calling .stop()
     const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
     const nextStartTimeRef = useRef(0);
 
@@ -687,6 +689,8 @@ const AIInterviewSimulator = ({ user, updateUser, unlockBadge, setPage }) => {
             cleanup();
         };
     }, [cleanup]);
+    // Fix: Extracted status text mapping to a constant to avoid potential TypeScript inference issues with inline object lookups.
+    const statusTextMap = { requesting: "Requesting mic...", connecting: "Connecting...", running: "Interview in progress..." };
 
     const renderContent = () => {
         if (!isPiqFilled) {
@@ -717,7 +721,7 @@ const AIInterviewSimulator = ({ user, updateUser, unlockBadge, setPage }) => {
                         )
                     ),
                     React.createElement("div", { className: "interview-controls" },
-                        React.createElement("span", { className: `interview-status-text ${status}`}, { requesting: "Requesting mic...", connecting: "Connecting...", running: "Interview in progress..." }[status]),
+                        React.createElement("span", { className: `interview-status-text ${status}`}, statusTextMap[status]),
                         React.createElement("button", { onClick: endInterview, className: "btn btn-danger" }, "End Interview")
                     )
                 );
@@ -820,17 +824,45 @@ const Dashboard = ({ user, setPage }) => {
     const testTypes = ['tat', 'wat', 'srt', 'sdt', 'oir', 'lecturerette', 'gpe', 'ai_interview'];
     const completedTests = testTypes.filter(type => user.tests && user.tests[type]?.length > 0);
     const overallProgress = (completedTests.length / testTypes.length) * 100;
+
+    const recentActivity = useMemo(() => {
+        if (!user.tests) return [];
+        const allTests = Object.entries(user.tests).flatMap(([testType, tests]) =>
+            (tests as any[]).map(test => ({...test, testType}))
+        );
+        allTests.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return allTests.slice(0, 5);
+    }, [user.tests]);
     
     return React.createElement("div", null,
         React.createElement("h1", { className: "page-header" }, "Welcome, ", user.name, "!"),
-        React.createElement("div", { className: "dashboard-grid" },
-            React.createElement("div", { className: "card" },
+        React.createElement("div", { className: "dashboard-grid", style: { gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-lg)'} },
+           React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)'}},
+             React.createElement("div", { className: "card" },
                 React.createElement("h2", null, "Overall Progress"),
                 React.createElement("div", { className: "progress-bar-container" },
                     React.createElement("div", { className: "progress-bar-fill", style: { width: `${overallProgress}%` } })
                 ),
                 React.createElement("p", { className: "progress-label" }, `${completedTests.length} of ${testTypes.length} test types attempted`)
             ),
+             React.createElement("div", { className: "card" },
+                React.createElement("h2", null, "Recent Activity"),
+                 recentActivity.length > 0 ? (
+                    React.createElement("ul", { className: 'history-list' },
+                        recentActivity.map((activity, index) => (
+                            React.createElement("li", { key: index, className: 'history-item' },
+                                React.createElement("p", null, 
+                                    React.createElement("strong", null, activity.testType.toUpperCase()), " test completed"
+                                ),
+                                React.createElement("span", { className: 'date' }, new Date(activity.date).toLocaleDateString())
+                            )
+                        ))
+                    )
+                 ) : (
+                    React.createElement("p", {className: 'no-history' }, "Your recent test attempts will appear here.")
+                 )
+            )
+           ),
             React.createElement("div", { className: "card badges-section" },
                 React.createElement("h2", null, "My Badges"),
                 React.createElement("div", { className: "badges-grid" }, 
@@ -845,11 +877,6 @@ const Dashboard = ({ user, setPage }) => {
                         )
                     )
                 )
-            ),
-            React.createElement("div", { className: "card" },
-                React.createElement("h2", null, "Recent Activity"),
-                /* Placeholder for recent activity feed */
-                React.createElement("p", {className: 'no-history' }, "Your recent test attempts will appear here.")
             )
         )
     );
@@ -886,7 +913,6 @@ const PsychTestRunner = ({ user, updateUser, unlockBadge, setPage, testType, ite
 
     const handleSubmit = async () => {
         setIsLoading(true);
-        // FIX: Changed to `const` and typed as `any` to allow adding the `assessment` property.
         const testResult: any = {
             date: new Date().toISOString(),
             responses: inputType === 'type' ? responses : { file: uploadedFile.name },
@@ -1003,18 +1029,238 @@ const SDTRunner = ({ user, updateUser, unlockBadge, setPage }) => {
 };
 
 const OIRTestRunner = ({ user, updateUser, unlockBadge, setPage, verbalQuestions, nonVerbalQuestions }) => {
-    // Component logic here...
+    const [status, setStatus] = useState('idle'); // idle, running, finished
+    const [testType, setTestType] = useState(null); // 'verbal' or 'non-verbal'
+    const [questions, setQuestions] = useState([]);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [answers, setAnswers] = useState({});
+    const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes
+    const [feedback, setFeedback] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (status !== 'running') return;
+        if (timeLeft === 0) {
+            handleSubmit();
+        }
+        const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [status, timeLeft]);
+
+    const startTest = (type) => {
+        setTestType(type);
+        setQuestions(type === 'verbal' ? verbalQuestions : nonVerbalQuestions);
+        setStatus('running');
+        setAnswers({});
+        setCurrentQuestionIndex(0);
+        setTimeLeft(30 * 60);
+    };
+
+    const handleAnswerSelect = (questionIndex, answer) => {
+        setAnswers(prev => ({ ...prev, [questionIndex]: answer }));
+    };
+
+    const handleSubmit = async () => {
+        setStatus('finished');
+        setIsLoading(true);
+        const results = questions.map((q, i) => ({
+            question: q,
+            userAnswer: answers[i] || "Not Answered",
+            isCorrect: (answers[i] || "") === q.answer
+        }));
+
+        const feedbackResult = await getAIAssessment('OIR', { testType, results });
+        const correctCount = results.filter(r => r.isCorrect).length;
+        if (feedbackResult && !feedbackResult.error) {
+            feedbackResult.score_percentage = (correctCount / questions.length) * 100;
+        }
+        setFeedback(feedbackResult);
+
+        const testResult = { date: new Date().toISOString(), testType, results, feedback: feedbackResult };
+        const updatedUser = { ...user, tests: { ...user.tests, oir: [...(user.tests?.oir || []), testResult] } };
+        updateUser(updatedUser);
+        unlockBadge('first_step');
+        if (feedbackResult.score_percentage === 100) {
+            unlockBadge('perfect_oir');
+        }
+        setIsLoading(false);
+    };
+
+    if (isLoading) return React.createElement(LoadingSpinner, { text: `Analyzing your ${testType} test results...` });
+    if (status === 'finished' && feedback) return React.createElement(FeedbackModal, { feedback, testType: `OIR ${testType}`, onClose: () => setPage('dashboard') });
+
+    if (status === 'idle') {
+        return React.createElement("div", null,
+            React.createElement("h1", { className: "page-header" }, "Officer Intelligence Rating (OIR) Test"),
+            React.createElement("div", { className: "card text-center" },
+                React.createElement("p", { style:{marginBottom: '1.5rem'} }, "Choose which OIR test you would like to attempt. You will have 30 minutes to answer 50 questions."),
+                React.createElement("div", { className: 'input-method-choice' },
+                    React.createElement("button", { onClick: () => startTest('verbal'), className: "btn btn-primary" }, "Start Verbal OIR Test"),
+                    React.createElement("button", { onClick: () => startTest('non-verbal'), className: "btn btn-primary" }, "Start Non-Verbal OIR Test")
+                )
+            )
+        );
+    }
+    
+    const currentQuestion = questions[currentQuestionIndex];
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+
     return React.createElement("div", null,
-        React.createElement("h1", { className: "page-header" }, "OIR Test"),
-        React.createElement("div", { className: "card" }, React.createElement("p", null, "OIR Test Runner is under construction."))
+        React.createElement("div", { className: "page-header", style:{alignItems: 'baseline'} },
+            React.createElement("h1", null, `OIR Test: ${testType.charAt(0).toUpperCase() + testType.slice(1)}`),
+            React.createElement("div", { className: "timer" }, `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`)
+        ),
+         React.createElement("div", { className: "test-progress-bar" }, React.createElement("div", { className: "test-progress-bar-inner", style: { width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` } })),
+        React.createElement("div", { className: "card" },
+            React.createElement("div", { className: "oir-question-container" },
+                React.createElement("h3", null, `Question ${currentQuestionIndex + 1}: ${currentQuestion.question}`),
+                currentQuestion.imageUrl && React.createElement("img", { src: currentQuestion.imageUrl, alt: "OIR Question Figure" })
+            ),
+            React.createElement("div", { className: `oir-options ${currentQuestion.type === 'non-verbal' ? 'image-options' : ''}` },
+                currentQuestion.options.map((option, index) => (
+                    React.createElement("label", { key: index, className: `oir-option ${answers[currentQuestionIndex] === option ? 'selected' : ''}` },
+                        React.createElement("input", { type: "radio", name: `q${currentQuestionIndex}`, value: option, checked: answers[currentQuestionIndex] === option, onChange: () => handleAnswerSelect(currentQuestionIndex, option) } as any),
+                        currentQuestion.type === 'verbal' ? option : React.createElement("img", { src: option, alt: `Option ${index + 1}` })
+                    )
+                ))
+            ),
+            React.createElement("div", { className: 'oir-controls' },
+                React.createElement("button", { className: "btn btn-secondary", onClick: () => setCurrentQuestionIndex(p => Math.max(0, p - 1)), disabled: currentQuestionIndex === 0 }, "Previous"),
+                currentQuestionIndex < questions.length - 1
+                    ? React.createElement("button", { className: "btn btn-primary", onClick: () => setCurrentQuestionIndex(p => Math.min(questions.length - 1, p + 1)) }, "Next")
+                    : React.createElement("button", { className: "btn btn-primary", onClick: handleSubmit }, "Finish Test")
+            )
+        )
     );
 };
 
 const Lecturerette = ({ user, updateUser, unlockBadge, setPage, topics }) => {
-    // Component logic here...
+    const [status, setStatus] = useState('idle'); // idle, selecting, prep, speaking, assessing, complete
+    const [selectedTopic, setSelectedTopic] = useState('');
+    const [briefing, setBriefing] = useState('');
+    const [transcript, setTranscript] = useState('');
+    const [isListening, setIsListening] = useState(false);
+    const [timer, setTimer] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [feedback, setFeedback] = useState(null);
+    const recognitionRef = useRef(null);
+
+    const startPrep = async (topic) => {
+        setSelectedTopic(topic);
+        setStatus('prep');
+        setTimer(3 * 60); // 3 minutes
+        setIsLoading(true);
+        const briefingText = await getTopicBriefing(topic);
+        setBriefing(briefingText);
+        setIsLoading(false);
+    };
+
+    const startSpeech = () => {
+        setStatus('speaking');
+        setTimer(3 * 60); // 3 minutes
+        handleListen();
+    };
+    
+    const handleListen = () => {
+        if (isListening) {
+            recognitionRef.current?.stop();
+            setIsListening(false);
+            return;
+        }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Speech recognition not supported in this browser.");
+            return;
+        }
+        
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onstart = () => setIsListening(true);
+        recognitionRef.current.onend = () => setIsListening(false);
+        recognitionRef.current.onerror = (event) => console.error("Speech recognition error:", event.error);
+        
+        let finalTranscript = transcript;
+        recognitionRef.current.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + '. ';
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            setTranscript(finalTranscript + interimTranscript);
+        };
+        recognitionRef.current.start();
+    };
+
+    const finishSpeech = async () => {
+        recognitionRef.current?.stop();
+        setIsListening(false);
+        setStatus('assessing');
+        setIsLoading(true);
+        const feedbackResult = await getAIAssessment('Lecturerette', { topic: selectedTopic, transcript });
+        setFeedback(feedbackResult);
+        const testResult = { date: new Date().toISOString(), topic: selectedTopic, transcript, feedback: feedbackResult };
+        const updatedUser = { ...user, tests: { ...user.tests, lecturerette: [...(user.tests?.lecturerette || []), testResult] } };
+        updateUser(updatedUser);
+        unlockBadge('first_step');
+        unlockBadge('orator_apprentice');
+        setIsLoading(false);
+        setStatus('complete');
+    };
+
+    useEffect(() => {
+        if ((status === 'prep' || status === 'speaking') && timer > 0) {
+            const t = setTimeout(() => setTimer(p => p - 1), 1000);
+            return () => clearTimeout(t);
+        } else if (timer === 0) {
+            if (status === 'prep') startSpeech();
+            if (status === 'speaking') finishSpeech();
+        }
+    }, [status, timer]);
+    
+    const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
+
+    if (isLoading && status !== 'prep') return React.createElement(LoadingSpinner, { text: "Generating feedback..." });
+    if (status === 'complete') return React.createElement(FeedbackModal, { feedback, testType: "Lecturerette", onClose: () => setPage('dashboard') });
+
+    const renderContent = () => {
+        switch(status) {
+            case 'idle':
+            case 'selecting':
+                return React.createElement("div", null,
+                    React.createElement("h2", { className: 'text-center' }, "Select a Topic"),
+                    React.createElement("p", { className: 'text-center', style: {marginBottom: '1.5rem'} }, "You will get 3 minutes to prepare and 3 minutes to speak."),
+                    React.createElement("div", { className: 'piq-form-grid' }, 
+                        topics.map(topic => React.createElement("button", { key: topic, className: 'btn btn-secondary', onClick: () => startPrep(topic) }, topic))
+                    )
+                );
+            case 'prep':
+                return React.createElement("div", null,
+                    React.createElement("div", { className: 'timer' }, formatTime(timer)),
+                    React.createElement("h2", { className: 'text-center' }, "Preparation Time"),
+                    React.createElement("p", { className: 'text-center', style: {marginBottom: '1.5rem'} }, "Topic: ", React.createElement("strong", null, selectedTopic)),
+                    isLoading ? React.createElement(LoadingSpinner, { text: 'Generating topic briefing...'}) : React.createElement("div", { className: 'briefer-content'}, briefing),
+                    React.createElement("button", { onClick: startSpeech, className: 'btn btn-primary', style: {marginTop: '1.5rem'} }, "Start Speaking")
+                );
+            case 'speaking':
+                 return React.createElement("div", null,
+                    React.createElement("div", { className: 'timer' }, formatTime(timer)),
+                    React.createElement("h2", { className: 'text-center' }, "Speaking: ", React.createElement("strong", null, selectedTopic)),
+                    React.createElement("textarea", { readOnly: true, value: transcript, placeholder: 'Your speech will be transcribed here...', style: {minHeight: '250px', marginBottom: '1.5rem'}} as any),
+                    React.createElement("button", { onClick: finishSpeech, className: 'btn btn-danger' }, "Finish Speech")
+                );
+        }
+    };
+
     return React.createElement("div", null,
         React.createElement("h1", { className: "page-header" }, "Lecturerette"),
-        React.createElement("div", { className: "card" }, React.createElement("p", null, "Lecturerette is under construction."))
+        React.createElement("div", { className: "card" }, renderContent())
     );
 };
 
@@ -1126,30 +1372,114 @@ const ProfilePage = ({ user, onSave }) => {
     );
 };
 
+const RadarChart = ({ data }) => {
+    const size = 500;
+    const center = size / 2;
+    const levels = 5;
+    const radius = center - 50;
+    const angleSlice = (Math.PI * 2) / OLQ_LIST.length;
+
+    const points = OLQ_LIST.map((olq, i) => {
+        const value = data[olq] || 0;
+        const r = (value / 5) * radius;
+        const x = center + r * Math.cos(angleSlice * i - Math.PI / 2);
+        const y = center + r * Math.sin(angleSlice * i - Math.PI / 2);
+        return `${x},${y}`;
+    }).join(' ');
+
+    return React.createElement("div", { className: 'radar-chart-container' },
+        React.createElement("svg", { viewBox: `0 0 ${size} ${size}`, className: 'radar-chart-svg' },
+            // Levels
+            Array.from({ length: levels }).map((_, levelIndex) =>
+                React.createElement("polygon", {
+                    key: levelIndex,
+                    className: 'radar-chart-level',
+                    points: OLQ_LIST.map((_, i) => {
+                        const r = (radius * (levelIndex + 1)) / levels;
+                        const x = center + r * Math.cos(angleSlice * i - Math.PI / 2);
+                        const y = center + r * Math.sin(angleSlice * i - Math.PI / 2);
+                        return `${x},${y}`;
+                    }).join(' '),
+                    fill: 'none'
+                })
+            ),
+            // Axes and Labels
+            OLQ_LIST.map((olq, i) => {
+                const x1 = center;
+                const y1 = center;
+                const r = radius;
+                const x2 = center + r * Math.cos(angleSlice * i - Math.PI / 2);
+                const y2 = center + r * Math.sin(angleSlice * i - Math.PI / 2);
+                const labelX = center + (radius + 20) * Math.cos(angleSlice * i - Math.PI / 2);
+                const labelY = center + (radius + 20) * Math.sin(angleSlice * i - Math.PI / 2);
+                return React.createElement(React.Fragment, { key: olq },
+                    React.createElement("line", { x1, y1, x2, y2, className: 'radar-chart-axis' }),
+                    React.createElement("text", { x: labelX, y: labelY, dy: '0.35em', textAnchor: 'middle', className: 'radar-chart-label' }, olq)
+                );
+            }),
+            // Data Area
+            React.createElement("polygon", { points: points, className: 'radar-chart-area' })
+        )
+    );
+};
+
 const OLQDashboard = ({ user }) => {
-    // Basic aggregation logic, would be more complex in a real app
     const olqScores = useMemo(() => {
-        const scores = OLQ_LIST.reduce((acc, olq) => ({...acc, [olq]: 0}), {});
-        let count = 0;
-        // FIX: Added type annotation for testType to resolve forEach error on unknown type.
+        // Fix: Explicitly type the initial value of the reduce function to ensure `scores` has the correct type.
+        const scores = OLQ_LIST.reduce((acc, olq) => ({...acc, [olq]: 0}), {} as Record<string, number>);
+        let testCount = 0;
         Object.values(user.tests || {}).forEach((testType: any[]) => {
             testType.forEach(test => {
                 if(test.feedback && !test.feedback.error && test.feedback.olqs_demonstrated) {
                     test.feedback.olqs_demonstrated.forEach(olq => {
                         if (scores[olq] !== undefined) scores[olq]++;
                     });
-                    count++;
+                    testCount++;
                 }
             });
         });
-        // Normalize scores
-        Object.keys(scores).forEach(olq => scores[olq] = count > 0 ? (scores[olq] / count) * 5 : 0);
+        
+        // Normalize scores out of 5, giving a base score of 1 to avoid empty chart
+        Object.keys(scores).forEach(olq => {
+             scores[olq] = testCount > 0 ? 1 + (scores[olq] / testCount) * 4 : 0;
+        });
         return scores;
     }, [user.tests]);
+    
+    const hasData = useMemo(() => Object.values(olqScores).some(score => score > 0), [olqScores]);
 
     return React.createElement("div", null,
         React.createElement("h1", { className: "page-header" }, "OLQ Analysis"),
-        React.createElement("div", { className: "card" }, "OLQ Dashboard is under construction. It will feature a radar chart visualizing your strengths.")
+        React.createElement("div", { className: "card" },
+           hasData ? (
+             React.createElement("div", { className: "olq-dashboard-container" },
+                React.createElement("div", null,
+                    React.createElement("h3", null, "Your OLQ Radar"),
+                     React.createElement(RadarChart, { data: olqScores })
+                ),
+                React.createElement("div", null,
+                    React.createElement("h3", null, "Interpretation"),
+                    React.createElement("p", { style: {marginBottom: '1rem', color: 'var(--neutral-light)'}}, "This chart visualizes your Officer-Like Qualities based on AI analysis of your test performance. Scores are normalized on a scale of 0 to 5."),
+                    React.createElement("table", {className: 'olq-interpretation-table'},
+                        React.createElement("tbody", null,
+                            Object.entries(olqScores).map(([olq, score]) => (
+                                React.createElement("tr", { key: olq },
+                                    React.createElement("td", null, React.createElement("strong", null, olq)),
+                                    React.createElement("td", null, 
+                                        React.createElement("div", { className: 'progress-bar-container', style: {height: '16px'} },
+                                           React.createElement("div", { className: 'progress-bar-fill', style: { width: `${(score as number / 5) * 100}%` }})
+                                        )
+                                    )
+                                )
+                            ))
+                        )
+                    )
+                )
+            )
+           ) : (
+             React.createElement("div", {className: 'no-history' }, "Complete some tests with AI feedback to see your OLQ analysis here.")
+           )
+        )
     );
 };
 
@@ -1210,10 +1540,120 @@ const TopicBriefer = () => {
 };
 
 const CommunityPage = ({ currentUser, allUsers, chats, data, saveData, sendFriendRequest, handleFriendRequest }) => {
-    // Component logic here...
+    const [currentTab, setCurrentTab] = useState('friends');
+    const [selectedFriend, setSelectedFriend] = useState(null);
+    const [message, setMessage] = useState('');
+
+    const chatMessages = useMemo(() => {
+        if (!selectedFriend || !chats) return [];
+        const chatKey = [currentUser.rollNo, selectedFriend.rollNo].sort().join('_');
+        return chats[chatKey] ? Object.values(chats[chatKey]) : [];
+    }, [selectedFriend, chats, currentUser]);
+    
+    const handleSendMessage = (e) => {
+        e.preventDefault();
+        if (!message.trim() || !selectedFriend) return;
+        
+        const chatKey = [currentUser.rollNo, selectedFriend.rollNo].sort().join('_');
+        const newMessage = {
+            sender: currentUser.rollNo,
+            text: message,
+            timestamp: new Date().toISOString()
+        };
+        
+        const newChats = { ...chats, [chatKey]: { ...(chats[chatKey] || {}), [Date.now()]: newMessage }};
+        saveData({ ...data, chats: newChats });
+        setMessage('');
+    };
+    
+    const ChatWindow = () => (
+        React.createElement("div", { className: 'chat-and-profile-layout' },
+            React.createElement("div", { className: 'chat-view' },
+                React.createElement("div", { className: 'chat-history' },
+// Fix: Explicitly type `msg` as `ChatMessage` to resolve property access errors on `unknown`.
+                     chatMessages.length > 0 ? chatMessages.map((msg: ChatMessage) => (
+                        React.createElement("div", { key: msg.timestamp, className: `chat-bubble ${msg.sender === currentUser.rollNo ? 'user' : 'friend'}` },
+                            msg.text,
+                            React.createElement("span", {className: 'chat-timestamp'}, new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}))
+                        )
+                    )) : React.createElement("div", {className: 'no-history' }, "Start the conversation!")
+                ),
+                React.createElement("form", { onSubmit: handleSendMessage, className: 'chat-input-form' },
+                    React.createElement("input", { type: 'text', placeholder: 'Type a message...', value: message, onChange: e => setMessage(e.target.value) } as any),
+                    React.createElement("button", { type: 'submit', className: 'btn btn-primary' }, "Send")
+                )
+            ),
+            React.createElement("div", { className: 'friend-profile-view' },
+                React.createElement("div", {className: 'card'},
+                    React.createElement("div", { className: 'profile-photo-section' },
+                        React.createElement("img", { src: selectedFriend.profilePic || DEFAULT_PROFILE_PIC, alt: selectedFriend.name, className: 'profile-picture' }),
+                        React.createElement("h3", { style: {marginTop: '1rem', marginBottom: '0.5rem'}}, selectedFriend.name),
+                        React.createElement("p", { style: { color: 'var(--neutral-light)'}}, selectedFriend.rollNo)
+                    ),
+                    React.createElement("hr", { style: { border: '1px solid var(--primary-light)', margin: '1rem 0'}}),
+                     React.createElement("div", { className: "badges-section" },
+                        React.createElement("h4", null, "Badges"),
+                        React.createElement("div", { className: "badges-grid", style: {gap: 'var(--spacing-md)'} }, 
+                            Object.entries(BADGES).map(([id, badge]) => 
+                                React.createElement("div", { key: id, className: `badge ${selectedFriend.badges?.includes(id) ? 'unlocked' : ''}` },
+                                    React.createElement("img", { src: badge.icon, alt: badge.name, className: "badge-icon", style: {width: '50px', height: '50px'} }),
+                                    React.createElement("div", { className: "badge-tooltip" }, 
+                                        React.createElement("strong", null, badge.name),
+                                        React.createElement("p", null, badge.desc)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    );
+
     return React.createElement("div", null,
         React.createElement("h1", { className: "page-header" }, "Community Hub"),
-        React.createElement("div", { className: "card" }, React.createElement("p", null, "Community features are under construction."))
+        React.createElement("div", { className: "community-container" },
+            React.createElement("div", { className: "community-sidebar" },
+                React.createElement("div", { className: 'community-tabs' },
+                    React.createElement("button", { className: currentTab === 'friends' ? 'active' : '', onClick: () => setCurrentTab('friends') }, "Friends"),
+                    React.createElement("button", { className: currentTab === 'users' ? 'active' : '', onClick: () => setCurrentTab('users') }, "All Users"),
+                    React.createElement("button", { className: currentTab === 'requests' ? 'active' : '', onClick: () => setCurrentTab('requests') }, `Requests (${currentUser.friendRequests?.length || 0})`)
+                ),
+                React.createElement("div", { className: 'community-list' },
+                    currentTab === 'friends' && (currentUser.friends || []).map(rollNo => {
+                        const friend = allUsers.find(u => u.rollNo === rollNo);
+                        if (!friend) return null;
+                        return React.createElement("div", { key: friend.rollNo, className: `community-list-item ${selectedFriend?.rollNo === friend.rollNo ? 'active' : ''}`, onClick: () => setSelectedFriend(friend) },
+                            React.createElement("img", { src: friend.profilePic || DEFAULT_PROFILE_PIC, alt: friend.name }),
+                            React.createElement("span", null, friend.name)
+                        );
+                    }),
+                    currentTab === 'users' && allUsers.filter(u => u.rollNo !== currentUser.rollNo).map(user => (
+                        React.createElement("div", { key: user.rollNo, className: 'community-list-item' },
+                             React.createElement("img", { src: user.profilePic || DEFAULT_PROFILE_PIC, alt: user.name }),
+                             React.createElement("span", null, user.name),
+                             !currentUser.friends?.includes(user.rollNo) && !user.friendRequests?.includes(currentUser.rollNo) &&
+                                React.createElement("button", { className: 'btn btn-secondary', style: {padding: '0.3rem 0.6rem', fontSize: '0.8rem'}, onClick: () => sendFriendRequest(currentUser, user) }, "Add")
+                        )
+                    )),
+                    currentTab === 'requests' && (currentUser.friendRequests || []).map(rollNo => {
+                        const requester = allUsers.find(u => u.rollNo === rollNo);
+                        if (!requester) return null;
+                        return React.createElement("div", { key: requester.rollNo, className: 'community-list-item request' },
+                             React.createElement("img", { src: requester.profilePic || DEFAULT_PROFILE_PIC, alt: requester.name }),
+                             React.createElement("span", null, requester.name),
+                             React.createElement("div", {className: 'request-actions'},
+                                React.createElement("button", { className: 'btn btn-primary', onClick: () => handleFriendRequest(currentUser, requester.rollNo, true) }, "Accept"),
+                                React.createElement("button", { className: 'btn btn-danger', onClick: () => handleFriendRequest(currentUser, requester.rollNo, false) }, "Decline")
+                             )
+                        );
+                    })
+                )
+            ),
+            React.createElement("div", { className: "community-main" },
+                selectedFriend ? React.createElement(ChatWindow, null) : React.createElement("div", { className: 'card no-history' }, "Select a friend to start chatting.")
+            )
+        )
     );
 };
 
@@ -1236,7 +1676,6 @@ const App = () => {
     }, [mobileNavOpen]);
 
     if (!data) return React.createElement("div", { className: "app-loading-screen" }, React.createElement(LoadingSpinner, {}), React.createElement("h2", null, "Loading NOX SSB Prep..."));
-    // FIX: Removed the `existingUsers` prop as it is not defined on the `LoginScreen` component.
     if (!currentUser) return React.createElement(LoginScreen, { onLogin: login, onSignup: signup, error: error });
 
     const PageComponent = {
@@ -1313,11 +1752,9 @@ const LoginScreen = ({ onLogin, onSignup, error }) => {
 };
 
 const Sidebar = ({ user, onLogout, currentPage, setPage, isAdmin, friendRequests, isOpen, setIsOpen }) => {
-    // FIX: Typed the state to allow for string keys, fixing property access errors.
     const [openSubmenus, setOpenSubmenus] = useState<{ [key: string]: boolean }>({});
     const toggleSubmenu = (menu) => setOpenSubmenus(prev => ({ ...prev, [menu]: !prev[menu] }));
 
-    // FIX: Made the `icon` prop optional with a default value of null.
     const NavLink = ({ page, name, icon = null, isChild = false, hasSubmenu = false, submenuKey = '' }) => (
         React.createElement("a", { href: "#", className: `${isChild ? 'nav-link-child' : 'nav-link'} ${currentPage === page ? 'active' : ''}`, onClick: (e) => { e.preventDefault(); if (hasSubmenu) toggleSubmenu(submenuKey); else setPage(page); } } as any,
             icon && React.createElement("svg", { className: "nav-icon", viewBox: "0 0 24 24", fill: "currentColor" }, icon),
