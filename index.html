@@ -1826,48 +1826,39 @@
       measurementId: "G-H5NBK3DFSY"
     };
 
-    // Initialize Firebase
-    try {
-        // A check to see if the placeholder config is still present.
-        if (firebaseConfig.apiKey.startsWith("REPLACE_WITH") || firebaseConfig.apiKey === "AIzaSyCiW_CwudgAzmtQIoP4r2ZTfcwSZnO8J9k") {
-             // The second part of this check is a trick to handle re-running the same prompt. If the key is already set, we don't want to show the error.
-             // This is a bit of a hack for the development environment. In a real app, this logic would be different.
-             // The user provided a key which is not a placeholder, so we are now using that.
-             // But if the user provides the same key again, we still want the app to run.
-             // Let's adjust the original check to just check for the placeholder.
-            if (firebaseConfig.apiKey === "REPLACE_WITH_YOUR_FIREBASE_API_KEY") {
-                console.error("Firebase is not configured. Please add your config in index.html.");
-                document.getElementById('root').innerHTML = `
-                <div class="app-loading-screen" style="padding: 1rem;">
-                    <h2 style="color: var(--danger-color);">Firebase Not Configured</h2>
-                    <p style="color: var(--neutral-light); max-width: 600px; margin: 1rem; text-align: left;">
-                        Welcome to the SSB Prep App! To get started, you need to connect your own Firebase project.
-                        <br/><br/>
-                        <strong>Action Required:</strong>
-                        <ol style="margin-left: 2rem; margin-top: 0.5rem; line-height: 1.8;">
-                            <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" style="color: var(--accent-color);">Firebase Console</a> and create a new project.</li>
-                            <li>Enable the <strong>Realtime Database</strong> and <strong>Storage</strong> services.</li>
-                            <li>In your project settings, find your web app's Firebase configuration snippet.</li>
-                            <li>Open the <code>index.html</code> file in this project and replace the placeholder <code>firebaseConfig</code> object with your own.</li>
-                        </ol>
-                    </p>
-                </div>`;
-            } else {
-                 firebase.initializeApp(firebaseConfig);
+    // Robust Firebase Initialization
+    const isPlaceholder = !firebaseConfig.apiKey || firebaseConfig.apiKey.includes("REPLACE_WITH");
+
+    if (isPlaceholder) {
+        console.error("Firebase is not configured. Please add your config in index.html.");
+        document.getElementById('root').innerHTML = `
+        <div class="app-loading-screen" style="padding: 1rem;">
+            <h2 style="color: var(--danger-color);">Firebase Not Configured</h2>
+            <p style="color: var(--neutral-light); max-width: 600px; margin: 1rem; text-align: left;">
+                Welcome to the SSB Prep App! To get started, you need to connect your own Firebase project.
+                <br/><br/>
+                <strong>Action Required:</strong>
+                <ol style="margin-left: 2rem; margin-top: 0.5rem; line-height: 1.8;">
+                    <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" style="color: var(--accent-color);">Firebase Console</a> and create a new project.</li>
+                    <li>Enable the <strong>Realtime Database</strong> and <strong>Storage</strong> services.</li>
+                    <li>In your project settings, find your web app's Firebase configuration snippet.</li>
+                    <li>Open the <code>index.html</code> file in this project and replace the placeholder <code>firebaseConfig</code> object with your own.</li>
+                </ol>
+            </p>
+        </div>`;
+    } else {
+        try {
+            // Check if Firebase is already initialized to prevent errors.
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
             }
-        } else {
-            firebase.initializeApp(firebaseConfig);
-        }
-    } catch (e) {
-        // This handles cases where Firebase is already initialized, which can happen in some dev environments.
-        if (!/already exists/.test(e.message)) {
-          console.error("Firebase initialization error:", e);
-          document.getElementById('root').innerHTML = '<div class="app-loading-screen"><h2 style="color: var(--danger-color);">Firebase Error</h2><p style="color: var(--neutral-light);">Could not initialize Firebase. Check the console for details.</p></div>';
+        } catch (e) {
+            console.error("Firebase initialization error:", e);
+            document.getElementById('root').innerHTML = '<div class="app-loading-screen"><h2 style="color: var(--danger-color);">Firebase Error</h2><p style="color: var(--neutral-light);">Could not initialize Firebase. Check the console for details.</p></div>';
         }
     }
   </script>
 
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel" data-type="module" src="index.tsx"></script>
+  <script type="module" src="index.tsx"></script>
 </body>
 </html>
