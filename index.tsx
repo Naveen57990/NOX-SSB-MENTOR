@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -47,7 +48,10 @@ const getDefaultData = () => ({
         tat_images: TAT_IMAGES_DEFAULT,
         wat_words: WAT_WORDS_DEFAULT,
         srt_scenarios: SRT_SCENARIOS_DEFAULT,
-        lecturerette_topics: LECTURERETTE_TOPICS_DEFAULT,
+        lecturerette_topics_geopolitics: LECTURERETTE_TOPICS_GEOPOLITICS,
+        lecturerette_topics_india: LECTURERETTE_TOPICS_INDIA,
+        lecturerette_topics_general: LECTURERETTE_TOPICS_GENERAL,
+        lecturerette_topics_personal: LECTURERETTE_TOPICS_PERSONAL,
         oir_verbal_questions: OIR_VERBAL_QUESTIONS_BANK,
         oir_non_verbal_questions: OIR_NON_VERBAL_QUESTIONS_BANK,
         gpe_scenarios: GPE_SCENARIOS_DEFAULT,
@@ -126,13 +130,72 @@ const TAT_IMAGES_DEFAULT = [
 ];
 const WAT_WORDS_DEFAULT = ['Duty', 'Courage', 'Team', 'Defeat', 'Lead', 'Responsibility', 'Friend', 'Failure', 'Order', 'Discipline', 'Work', 'Army', 'Risk', 'Success', 'Challenge', 'Honour', 'Sacrifice', 'Tension', 'Brave', 'Win', 'Attack', 'Weapon', 'Strategy', 'Calm', 'Confidence', 'Obstacle', 'Cooperate', 'Help', 'Officer', 'System', 'Possible', 'Worry', 'Afraid', 'Nervous', 'Difficult', 'Obey', 'Command', 'Follow', 'Unity', 'Effort', 'Aim', 'Goal', 'Serious', 'Mature', 'Peace', 'War', 'Nation', 'Sports', 'Love', 'Death', 'Society', 'Future', 'Choice', 'Pressure', 'Mistake', 'Greed', 'Time', 'Money', 'Power', 'Health'];
 const SRT_SCENARIOS_DEFAULT = [
-    'You are on your way to an important exam and you see an accident. You are the first person to arrive. What would you do?', 
-    'During a group task, your team members are not cooperating. What would you do?',
-    'You are the captain of a sports team which is about to lose a crucial match. How will you motivate your team?',
-    'While traveling by train, you notice a fellow passenger has left their bag behind. What steps will you take?',
-    'You have been assigned a difficult task with a very tight deadline. What is your course of action?'
+    "You are on your way to an important exam and you see an accident. You are the first person to arrive. What would you do?",
+    "During a group task, your team members are not cooperating. What would you do?",
+    "You are the captain of a sports team which is about to lose a crucial match. How will you motivate your team?",
+    "While traveling by train, you notice a fellow passenger has left their bag behind. What steps will you take?",
+    "You have been assigned a difficult task with a very tight deadline. What is your course of action?",
+    "You find out your close friend is involved in illegal activities. What would you do?",
+    "You are in a crowded place and you see someone pickpocketing another person. What would you do?",
+    "Your superior gives you an order that you believe is morally wrong. How do you handle this?",
+    "You are lost in a forest with limited supplies. What is your plan for survival?",
+    "In a debate, your opponent makes a personal attack instead of arguing logically. How do you respond?",
+    "You have two important commitments at the same time. How do you decide which one to attend?",
+    "You are offered a bribe to overlook a mistake made by a contractor. What would you do?",
+    "You see a building on fire before the fire brigade has arrived. What is your immediate action?",
+    "You are in charge of a project and a key member falls sick just before the deadline. How do you manage?",
+    "You are being ragged by your seniors in college. How do you react?",
+    "You are on a trek and one of your group members gets injured and cannot walk. What do you do?",
+    "You witness a road rage incident where one person is getting violent. How do you intervene?",
+    "You are given the responsibility to organize a college fest with a very small budget. What is your approach?",
+    "Your friend is feeling depressed and showing suicidal tendencies. What steps will you take?",
+    "You are in a remote area with no network and your vehicle breaks down. What do you do?",
+    "You accidentally damage a valuable item belonging to your friend. How do you handle it?",
+    "During an outdoor camp, you realize a snake has entered your tent. What would you do?",
+    "You are the only person who knows the password to a critical system, and you are going on leave. What precautions do you take?",
+    "You get selected for a job, but you realize the company's values do not align with yours. What do you do?",
+    "While on duty, you catch your colleague breaking an important rule. What is your course of action?",
+    "You are on a boat that capsizes in the middle of a lake. You are a good swimmer. What do you do?",
+    "You are asked to lead a team where most members are more experienced than you. How do you build rapport?",
+    "You receive a large sum of money credited to your bank account by mistake. What would you do?",
+// Fix: Removed a stray character 's' that was causing a syntax error.
+    "A junior colleague is struggling with their work. How do you help them without doing the work for them?",
+    "You are in a foreign country and lose your passport and wallet. What are your immediate steps?",
+    "You are part of a rescue team during a natural disaster. You have to choose between saving a child or an elderly person. What do you do?",
+    "You are driving and a person suddenly comes in front of your car. You brake hard and avoid them, but they start abusing you. How do you react?",
+    "You are given confidential information and are being pressured to reveal it. What do you do?",
+    "You see your friend cheating in an exam. What would you do?",
+    "You are leading a group discussion, and two members get into a heated argument. How do you control the situation?",
+    "Your parents want you to pursue a different career path than the one you are passionate about. How do you convince them?",
+    "You are stuck in an elevator with a few other people and the power goes off. What would you do?",
+
+    "You are in a situation where you have to lie to save someone from getting into serious trouble. What do you do?",
+    "You are chosen to represent your country at an international event. How do you prepare?",
+    "You find a rumor spreading about you in your workplace. How do you address it?",
+    "You are managing a team and you notice a decline in morale. What steps do you take?",
+    "You are a soldier on patrol and you get separated from your unit. What is your plan?",
+    "You have to give a presentation to a large audience and you have a fear of public speaking. How do you cope?",
+    "You are on a tight budget and an unexpected, essential expense comes up. How do you manage your finances?",
+    "You are being followed by a suspicious person at night. What would you do?",
+    "You are asked to work on a weekend to complete an urgent task. How do you react?",
+    "You see someone littering in a public place. What would you do?",
+    "You are in a leadership position and have to make an unpopular decision that is for the greater good. How do you communicate it to your team?",
+    "You have failed in multiple attempts to clear an exam. How do you keep yourself motivated?",
+    "You are negotiating a deal and the other party is being very aggressive and unreasonable. How do you proceed?",
+    "You are having a meal at a restaurant and you are served substandard food. How do you complain?",
+    "You are in a group where everyone else has a different opinion than you on an important matter. How do you put your point across?",
+    "You have to cross a river with your team, but the bridge is broken. What are the possible solutions you would consider?",
+    "You are playing a game and you see the opponent team is cheating. What do you do?",
+    "You are given the task of training a new batch of recruits. What will be your approach?",
+    "You are attending a party and you see your friend being forced to drink alcohol. What would you do?",
+    "You are on a public transport and it is overcrowded. You see an elderly person standing. What would you do?",
+    "You are in a position of authority and one of your subordinates is underperforming. How do you handle it?",
+    "You are faced with a sudden and unexpected change in your plans. How do you adapt?"
 ];
-const LECTURERETTE_TOPICS_DEFAULT = ['My Favourite Hobby', 'The Importance of Discipline in Life', 'India in 2047', 'Artificial Intelligence: A Boon or a Bane?', 'My Role Model', 'Indo-China Relations', 'Cyber Security', 'Make in India Initiative'];
+const LECTURERETTE_TOPICS_GEOPOLITICS = ['Indo-China Relations', 'Russia-Ukraine Conflict', 'The Quad Alliance', 'India\'s Role in Afghanistan', 'G20 Presidency of India', 'Climate Change and Global Politics'];
+const LECTURERETTE_TOPICS_INDIA = ['Make in India Initiative', 'Agnipath Scheme', 'Digital India', 'Challenges to Internal Security of India', 'India\'s Space Program', 'Uniform Civil Code'];
+const LECTURERETTE_TOPICS_GENERAL = ['Artificial Intelligence: A Boon or a Bane?', 'The Importance of Discipline in Life', 'Social Media\'s Impact on Youth', 'Electric Vehicles: The Future of Transport?', 'Is Democracy the Best Form of Government?'];
+const LECTURERETTE_TOPICS_PERSONAL = ['My Favourite Hobby', 'My Role Model', 'A Memorable Journey I Have Had', 'The Book That Changed My Life', 'If I Were a Superhero', 'The Importance of Friendship'];
 const SDT_PROMPTS = ["What do your parents think of you?", "What do your teachers/superiors think of you?", "What do your friends think of you?", "What do you think of yourself? (Your strengths and weaknesses)", "What kind of person would you like to become?"];
 const OIR_VERBAL_QUESTIONS_BANK = [
     { type: 'verbal', category: 'Series Completion', question: 'Which number should come next in the series? 2, 6, 12, 20, 30, ?', options: ['42', '40', '36', '48'], answer: '42' },
@@ -228,6 +291,8 @@ function createBlob(data) {
   };
 }
 
+// --- Utility Functions ---
+const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
 // --- AI INTEGRATION ---
 async function fileToGenerativePart(file) {
@@ -374,11 +439,11 @@ const getAIAssessment = async (testType, data) => {
     }
 };
 
-const getNewsUpdate = async (topic) => {
+const getNewsUpdate = async () => {
     try {
         const response = await getAI().models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `Provide a concise summary of the latest news and key developments on the topic: "${topic}". Include 3-4 important bullet points. Format it nicely for display using Markdown.`,
+            contents: `Provide a concise but comprehensive summary of the latest news and key developments covering Geopolitics, Indian National Affairs, Defence, and International Relations. Structure the response with clear Markdown headings for each section and use bullet points for key information.`,
         });
         return response.text;
     } catch (error) {
@@ -489,12 +554,14 @@ const useBadges = (currentUser, updateUser) => {
 // --- UI COMPONENTS ---
 const LoadingSpinner = ({ text }: { text?: string }) => (
     React.createElement("div", { className: "loading-container" },
-        React.createElement("div", { className: "loading-spinner" }),
+// Fix: Added `as any` to the props object to resolve a TypeScript error where `className` was not a recognized property. This is a common workaround for type definition issues in this file.
+        React.createElement("div", { className: "loading-spinner" } as any),
         text && React.createElement("p", null, text)
     )
 );
 
-const Modal = ({ children, onClose, title }: React.PropsWithChildren<{ onClose: any, title: string }>) => (
+// Fix: Correctly type the `onClose` prop to avoid type inference issues with the button's `onClick` event.
+const Modal = ({ children, onClose, title }: React.PropsWithChildren<{ onClose: () => void, title: string }>) => (
     React.createElement("div", { className: "modal-overlay", onClick: onClose },
         React.createElement("div", { className: "modal-content", onClick: e => e.stopPropagation() },
             React.createElement("div", { className: "modal-header" },
@@ -768,13 +835,114 @@ const Leaderboard = ({ users, currentUser }) => {
 const AdminPanel = ({ data, saveData }) => {
     const [currentTab, setCurrentTab] = useState('users');
     const [selectedUser, setSelectedUser] = useState(null);
+    const [uploading, setUploading] = useState(false);
 
     const handleContentUpdate = (category, newItems) => {
         const newData = { ...data, content: { ...data.content, [category]: newItems } };
         saveData(newData);
     };
 
-    const renderContentManager = (category, items) => {
+    const handleFileUpload = async (file, path, category) => {
+        if (!file) return;
+        setUploading(true);
+        try {
+            const storageRef = firebase.storage().ref();
+            const fileRef = storageRef.child(`${path}/${file.name}_${Date.now()}`);
+            await fileRef.put(file);
+            const url = await fileRef.getDownloadURL();
+
+            if (category === 'gpe_scenarios') {
+                 const updatedScenarios = [{ ...data.content.gpe_scenarios[0], mapImage: url }];
+                 handleContentUpdate(category, updatedScenarios);
+            } else {
+                handleContentUpdate(category, [...data.content[category], url]);
+            }
+        } catch (e) {
+            console.error("Upload failed", e);
+            alert("File upload failed.");
+        }
+        setUploading(false);
+    };
+
+    const AddNonVerbalQuestionForm = () => {
+        const [formData, setFormData] = useState({ category: 'Figure Series', question: '', imageUrl: null, options: [null, null, null, null], answer: 0 });
+        const [isSubmitting, setIsSubmitting] = useState(false);
+
+        const uploadFileAndGetUrl = async (file, path) => {
+            if (!file) return null;
+            const storageRef = firebase.storage().ref();
+            const fileRef = storageRef.child(`${path}/${file.name}_${Date.now()}`);
+            await fileRef.put(file);
+            return await fileRef.getDownloadURL();
+        };
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            setIsSubmitting(true);
+            try {
+                if (!formData.imageUrl || formData.options.some(opt => !opt)) {
+                    alert("Please provide all 5 images.");
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                const mainImageUrl = await uploadFileAndGetUrl(formData.imageUrl, 'oir_non_verbal');
+                const optionUrls = await Promise.all(formData.options.map(opt => uploadFileAndGetUrl(opt, 'oir_non_verbal')));
+
+                const newQuestion = {
+                    type: 'non-verbal',
+                    category: formData.category,
+                    question: formData.question,
+                    imageUrl: mainImageUrl,
+                    options: optionUrls,
+                    answer: optionUrls[formData.answer]
+                };
+
+                const updatedQuestions = [...data.content.oir_non_verbal_questions, newQuestion];
+                handleContentUpdate('oir_non_verbal_questions', updatedQuestions);
+                alert("Question added successfully!");
+                setFormData({ category: 'Figure Series', question: '', imageUrl: null, options: [null, null, null, null], answer: 0 });
+            } catch (err) {
+                console.error("Failed to add OIR question", err);
+                alert("Failed to add question.");
+            }
+            setIsSubmitting(false);
+        };
+
+        const handleFileChange = (e, field, index = -1) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (field === 'imageUrl') {
+                setFormData(prev => ({ ...prev, imageUrl: file }));
+            } else if (field === 'options') {
+                const newOptions = [...formData.options];
+                newOptions[index] = file;
+                setFormData(prev => ({ ...prev, options: newOptions }));
+            }
+        };
+
+        return React.createElement("form", { onSubmit: handleSubmit, className: 'add-item-form-stacked' },
+// Fix: Added `as any` to the props objects for select and option elements to resolve TypeScript errors where `value` was not a recognized property.
+            React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Category"), React.createElement("select", { value: formData.category, onChange: e => setFormData(p => ({ ...p, category: e.target.value })) } as any, ['Figure Series', 'Figure Analogy', 'Odd One Out', 'Mirror Image'].map(c => React.createElement("option", { key: c, value: c } as any, c)))),
+            React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Question Text"), React.createElement("input", { type: 'text', value: formData.question, onChange: e => setFormData(p => ({ ...p, question: e.target.value })), required: true } as any)),
+            React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Problem Figure Image"), React.createElement("input", { type: 'file', accept: "image/*", onChange: e => handleFileChange(e, 'imageUrl'), required: true } as any)),
+            React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Option Images (4 required)")),
+            React.createElement("div", { className: 'piq-form-grid' },
+                [0, 1, 2, 3].map(i => React.createElement("div", { key: i }, React.createElement("input", { type: 'file', accept: "image/*", onChange: e => handleFileChange(e, 'options', i), required: true } as any)))
+            ),
+            React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Correct Answer"),
+                React.createElement("div", { className: 'oir-options', style: { gridTemplateColumns: '1fr 1fr 1fr 1fr' } },
+                    [0, 1, 2, 3].map(i => React.createElement("label", { key: i, className: `oir-option ${formData.answer === i ? 'selected' : ''}` },
+                        React.createElement("input", { type: "radio", name: "correctAnswer", checked: formData.answer === i, onChange: () => setFormData(p => ({ ...p, answer: i })) } as any),
+                        `Option ${i + 1}`
+                    ))
+                )
+            ),
+            React.createElement("button", { type: 'submit', className: 'btn btn-primary', disabled: isSubmitting }, isSubmitting ? "Submitting..." : "Add Question")
+        );
+    };
+
+    const renderTextContentManager = (category, items) => {
         const [newItem, setNewItem] = useState('');
         const handleAdd = () => {
             if (newItem.trim()) {
@@ -782,12 +950,10 @@ const AdminPanel = ({ data, saveData }) => {
                 setNewItem('');
             }
         };
-        const handleRemove = (index) => {
-            handleContentUpdate(category, items.filter((_, i) => i !== index));
-        };
+        const handleRemove = (index) => handleContentUpdate(category, items.filter((_, i) => i !== index));
         return React.createElement("div", null,
-            React.createElement("ul", { className: 'content-list' }, items.map((item, i) => React.createElement("li", { key: i, className: 'content-list-item' }, React.createElement("span", { className: 'item-text' }, item), React.createElement("button", { onClick: () => handleRemove(i) }, "Remove")))),
-            React.createElement("div", { className: 'add-item-form' }, React.createElement("input", { type: 'text', value: newItem, onChange: e => setNewItem(e.target.value), placeholder: `New ${category.replace('_', ' ')}...` } as any), React.createElement("button", { onClick: handleAdd }, "Add"))
+            React.createElement("ul", { className: 'content-list' }, items.map((item, i) => React.createElement("li", { key: i, className: 'content-list-item' }, React.createElement("span", { className: 'item-text' }, item), React.createElement("button", { className: 'btn-danger btn', onClick: () => handleRemove(i) }, "Remove")))),
+            React.createElement("div", { className: 'add-item-form' }, React.createElement("input", { type: 'text', value: newItem, onChange: e => setNewItem(e.target.value), placeholder: `New ${category.replace(/_/g, ' ')}...` } as any), React.createElement("button", { onClick: handleAdd }, "Add"))
         );
     };
 
@@ -798,6 +964,7 @@ const AdminPanel = ({ data, saveData }) => {
                 React.createElement("button", { className: currentTab === 'users' ? 'active' : '', onClick: () => setCurrentTab('users') }, "Users"),
                 React.createElement("button", { className: currentTab === 'content' ? 'active' : '', onClick: () => setCurrentTab('content') }, "Content Management")
             ),
+            uploading && React.createElement(LoadingSpinner, { text: "Uploading file..." }),
             currentTab === 'users' && React.createElement("div", { className: 'admin-container' },
                 React.createElement("div", { className: "admin-user-list" },
                     React.createElement("h4", null, "All Users"),
@@ -809,16 +976,32 @@ const AdminPanel = ({ data, saveData }) => {
                 )
             ),
             currentTab === 'content' && React.createElement("div", { className: 'admin-tab-content' },
-                React.createElement("h3", null, "Manage Test Content"),
-                React.createElement("div", { className: 'piq-form-grid' },
-                    React.createElement("div", null, React.createElement("h4", null, "WAT Words"), renderContentManager('wat_words', data.content.wat_words)),
-                    React.createElement("div", null, React.createElement("h4", null, "SRT Scenarios"), renderContentManager('srt_scenarios', data.content.srt_scenarios)),
-                    React.createElement("div", null, React.createElement("h4", null, "Lecturerette Topics"), renderContentManager('lecturerette_topics', data.content.lecturerette_topics))
-                )
+                React.createElement("div", { className: 'piq-form-grid', style: { gridTemplateColumns: '1fr 1fr' } },
+                    React.createElement("div", null, React.createElement("h4", null, "WAT Words"), renderTextContentManager('wat_words', data.content.wat_words)),
+                    React.createElement("div", null, React.createElement("h4", null, "SRT Scenarios"), renderTextContentManager('srt_scenarios', data.content.srt_scenarios))
+                ),
+                React.createElement("hr", { style: { border: '1px solid var(--primary-light)', margin: '1.5rem 0' } }),
+                React.createElement("h3", null, "Manage File Content"),
+                React.createElement("div", { className: 'piq-form-grid', style: { gridTemplateColumns: '1fr 1fr' } },
+                    React.createElement("div", null,
+                        React.createElement("h4", null, "TAT Images"),
+                        React.createElement("div", { className: 'content-list' }, data.content.tat_images.map((img, i) => React.createElement("li", { key: i, className: 'content-list-item' }, React.createElement("img", { src: img, className: 'image-preview' }), React.createElement("span", { className: 'item-text' }, img.split('/').pop().split('?')[0]), React.createElement("button", { className: 'btn-danger btn', onClick: () => handleContentUpdate('tat_images', data.content.tat_images.filter(url => url !== img)) }, "Del")))),
+                        React.createElement("input", { type: 'file', accept: "image/*", onChange: e => handleFileUpload(e.target.files[0], 'tat_images', 'tat_images') } as any)
+                    ),
+                    React.createElement("div", null,
+                        React.createElement("h4", null, "GPE Map"),
+                        React.createElement("img", { src: data.content.gpe_scenarios[0].mapImage, className: 'gpe-map', style: { marginBottom: '1rem' } }),
+                        React.createElement("input", { type: 'file', accept: "image/*", onChange: e => handleFileUpload(e.target.files[0], 'gpe_maps', 'gpe_scenarios') } as any)
+                    )
+                ),
+                React.createElement("hr", { style: { border: '1px solid var(--primary-light)', margin: '1.5rem 0' } }),
+                React.createElement("h3", null, "Add OIR Non-Verbal Question"),
+                React.createElement(AddNonVerbalQuestionForm, null)
             )
         )
-    )
+    );
 };
+
 
 const Dashboard = ({ user, setPage }) => {
     const testTypes = ['tat', 'wat', 'srt', 'sdt', 'oir', 'lecturerette', 'gpe', 'ai_interview'];
@@ -882,10 +1065,12 @@ const Dashboard = ({ user, setPage }) => {
     );
 };
 
-const PsychTestRunner = ({ user, updateUser, unlockBadge, setPage, testType, items, stimulus, timerDuration, itemDuration }) => {
+const PsychTestRunner = ({ user, updateUser, unlockBadge, setPage, testType, items, stimulus, itemDuration }) => {
     const [status, setStatus] = useState('idle'); // idle, running, finished
+    const [activeItems, setActiveItems] = useState([]);
     const [currentItem, setCurrentItem] = useState(0);
     const [timeLeft, setTimeLeft] = useState(itemDuration);
+    const [phase, setPhase] = useState('observing'); // For TAT: 'observing', 'writing'
     const [responses, setResponses] = useState({});
     const [inputType, setInputType] = useState('type'); // 'type' or 'upload'
     const [uploadedFile, setUploadedFile] = useState(null);
@@ -893,22 +1078,47 @@ const PsychTestRunner = ({ user, updateUser, unlockBadge, setPage, testType, ite
     const [assessmentResult, setAssessmentResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    const startTest = () => {
+        setActiveItems(shuffleArray(items));
+        setStatus('running');
+        setCurrentItem(0);
+        setResponses({});
+        if (testType === 'tat') {
+            setPhase('observing');
+            setTimeLeft(30); // 30s observation
+        } else {
+            setTimeLeft(itemDuration);
+        }
+    };
+
     useEffect(() => {
         if (status !== 'running') return;
+        
         if (timeLeft <= 0) {
-            if (currentItem < items.length - 1) {
+            if (testType === 'tat' && phase === 'observing') {
+                setPhase('writing');
+                setTimeLeft(4 * 60); // 4 minutes writing
+                return;
+            }
+
+            if (currentItem < activeItems.length - 1) {
                 setCurrentItem(prev => prev + 1);
-                setTimeLeft(itemDuration);
+                if (testType === 'tat') {
+                    setPhase('observing');
+                    setTimeLeft(30);
+                } else {
+                    setTimeLeft(itemDuration);
+                }
             } else {
                 setStatus('finished');
             }
         }
         const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
         return () => clearTimeout(timer);
-    }, [status, timeLeft, currentItem, items.length, itemDuration]);
+    }, [status, timeLeft, currentItem, activeItems.length, itemDuration, testType, phase]);
 
     const handleResponseChange = (e) => {
-        setResponses(prev => ({...prev, [items[currentItem]]: e.target.value }));
+        setResponses(prev => ({...prev, [activeItems[currentItem]]: e.target.value }));
     };
 
     const handleSubmit = async () => {
@@ -921,9 +1131,9 @@ const PsychTestRunner = ({ user, updateUser, unlockBadge, setPage, testType, ite
         
         let assessment;
         if (inputType === 'upload') {
-            assessment = await getWrittenAssessment(testType.toUpperCase(), items, { file: uploadedFile });
+            assessment = await getWrittenAssessment(testType.toUpperCase(), activeItems, { file: uploadedFile });
         } else {
-            assessment = await getWrittenAssessment(testType.toUpperCase(), items, { typed: responses });
+            assessment = await getWrittenAssessment(testType.toUpperCase(), activeItems, { typed: responses });
         }
         
         testResult.assessment = assessment;
@@ -948,13 +1158,16 @@ const PsychTestRunner = ({ user, updateUser, unlockBadge, setPage, testType, ite
     if (status === 'idle') {
         return React.createElement("div", { className: "test-runner-container" },
             React.createElement("h1", null, `${testType.toUpperCase()} Test`),
-            React.createElement("p", { className: 'test-instructions' }, `You will be shown ${items.length} ${stimulus.type}. You will have ${itemDuration} seconds for each.`),
+            React.createElement("p", { className: 'test-instructions' }, testType === 'tat'
+                ? `You will be shown ${items.length} pictures. For each picture, you'll have 30 seconds to observe it, after which it will disappear and you'll have 4 minutes to write a story.`
+                : `You will be shown ${items.length} ${stimulus.type}. You will have ${itemDuration} seconds for each.`
+            ),
             React.createElement("h3", null, "Choose your input method:"),
             React.createElement("div", { className: 'input-method-choice' },
                 React.createElement("button", { className: `btn ${inputType === 'type' ? 'btn-primary' : 'btn-secondary'}`, onClick: () => setInputType('type') }, "Type Answers"),
                 React.createElement("button", { className: `btn ${inputType === 'upload' ? 'btn-primary' : 'btn-secondary'}`, onClick: () => setInputType('upload') }, "Upload Handwritten Sheet")
             ),
-            React.createElement("button", { className: "btn btn-primary", style: { marginTop: '2rem' }, onClick: () => setStatus('running') }, "Start Test")
+            React.createElement("button", { className: "btn btn-primary", style: { marginTop: '2rem' }, onClick: startTest }, "Start Test")
         );
     }
     
@@ -971,26 +1184,133 @@ const PsychTestRunner = ({ user, updateUser, unlockBadge, setPage, testType, ite
         );
     }
 
-    const currentStimulus = items[currentItem];
+    const currentStimulus = activeItems[currentItem];
+    const isObservingTAT = testType === 'tat' && phase === 'observing';
+
     return React.createElement("div", { className: "test-runner-container" },
         React.createElement("div", { className: "timer" }, timeLeft),
-        React.createElement("div", { className: "test-progress-bar" }, React.createElement("div", { className: "test-progress-bar-inner", style: { width: `${((currentItem + 1) / items.length) * 100}%` } })),
+        React.createElement("p", { style: { fontFamily: 'var(--font-display)', color: 'var(--neutral-light)'}}, isObservingTAT ? "OBSERVE" : (testType === 'tat' ? "WRITE" : "")),
+        React.createElement("div", { className: "test-progress-bar" }, React.createElement("div", { className: "test-progress-bar-inner", style: { width: `${((currentItem + 1) / activeItems.length) * 100}%` } })),
         React.createElement("div", { className: "test-stimulus" },
-            stimulus.type === 'image' && React.createElement("img", { id: 'tat-image', src: currentStimulus, alt: `TAT Image ${currentItem + 1}` }),
+            stimulus.type === 'image' && (testType !== 'tat' || phase === 'observing') && React.createElement("img", { id: 'tat-image', src: currentStimulus, alt: `TAT Image ${currentItem + 1}` }),
+            stimulus.type === 'image' && testType === 'tat' && phase === 'writing' && React.createElement("div", { className: "transcript-placeholder" }, React.createElement("h2", null, "Start writing your story.")),
             stimulus.type === 'word' && React.createElement("h2", { id: 'wat-word' }, currentStimulus),
-            stimulus.type === 'scenario' && React.createElement("p", { className: 'srt-situation' }, currentStimulus)
         ),
         inputType === 'type' && React.createElement("textarea", {
             placeholder: stimulus.placeholder,
             value: responses[currentStimulus] || '',
-            onChange: handleResponseChange
+            onChange: handleResponseChange,
+            disabled: isObservingTAT
         } as any)
     );
 };
 
-const TATRunner = (props) => React.createElement(PsychTestRunner, { ...props, testType: 'tat', items: props.images, stimulus: { type: 'image', placeholder: "Write your story here..." }, timerDuration: 270, itemDuration: 240 });
-const WATRunner = (props) => React.createElement(PsychTestRunner, { ...props, testType: 'wat', items: props.words, stimulus: { type: 'word', placeholder: "Write your sentence here..." }, timerDuration: 900, itemDuration: 15 });
-const SRTRunner = (props) => React.createElement(PsychTestRunner, { ...props, testType: 'srt', items: props.scenarios, stimulus: { type: 'scenario', placeholder: "Write your reaction here..." }, timerDuration: 1800, itemDuration: 30 });
+const TATRunner = (props) => React.createElement(PsychTestRunner, { ...props, testType: 'tat', items: props.images, stimulus: { type: 'image', placeholder: "Write your story here..." }, itemDuration: 30 }); // itemDuration is now observation time
+const WATRunner = (props) => React.createElement(PsychTestRunner, { ...props, testType: 'wat', items: props.words, stimulus: { type: 'word', placeholder: "Write your sentence here..." }, itemDuration: 15 });
+
+const SRTRunner = ({ user, updateUser, unlockBadge, setPage, scenarios }) => {
+    const [status, setStatus] = useState('idle'); // idle, running, finished
+    const [activeScenarios, setActiveScenarios] = useState([]);
+    const [currentSituationIndex, setCurrentSituationIndex] = useState(0);
+    const [answers, setAnswers] = useState({});
+    const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes
+    const [showAssessment, setShowAssessment] = useState(false);
+    const [assessmentResult, setAssessmentResult] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (status !== 'running') return;
+        if (timeLeft <= 0) {
+            handleSubmit();
+        }
+        const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [status, timeLeft]);
+
+    const startTest = () => {
+        setActiveScenarios(shuffleArray(scenarios));
+        setStatus('running');
+    };
+
+    const handleAnswerChange = (index, value) => {
+        setAnswers(prev => ({ ...prev, [index]: value }));
+    };
+
+    const handleSubmit = async () => {
+        setStatus('finished');
+        setIsLoading(true);
+
+        const responsesForAI = activeScenarios.map((scenario, index) => ({
+            situation: scenario,
+            response: answers[index] || "Not Answered"
+        }));
+        
+        const typedResponses = Object.fromEntries(responsesForAI.map(r => [r.situation, r.response]));
+        const assessment = await getWrittenAssessment('SRT', activeScenarios, { typed: typedResponses });
+        setAssessmentResult(assessment);
+
+        const testResult = {
+            date: new Date().toISOString(),
+            responses: answers,
+            assessment: assessment
+        };
+
+        const updatedUser = {
+            ...user,
+            tests: {
+                ...user.tests,
+                srt: [...(user.tests?.srt || []), testResult]
+            }
+        };
+        updateUser(updatedUser);
+        unlockBadge('first_step');
+        setIsLoading(false);
+        setShowAssessment(true);
+    };
+
+    if (isLoading) return React.createElement(LoadingSpinner, { text: `Generating your SRT assessment...` });
+    if (showAssessment) return React.createElement(WrittenAssessmentViewer, { assessment: assessmentResult, onClose: () => setPage('dashboard') });
+
+    if (status === 'idle') {
+        return React.createElement("div", null,
+            React.createElement("h1", { className: "page-header" }, "Situation Reaction Test (SRT)"),
+            React.createElement("div", { className: "card text-center" },
+                React.createElement("p", { style:{marginBottom: '1.5rem'} }, `This is a full-length SRT. You will have 30 minutes to respond to ${scenarios.length} situations.`),
+                React.createElement("button", { onClick: startTest, className: "btn btn-primary" }, "Start Test")
+            )
+        );
+    }
+    
+    const currentSituation = activeScenarios[currentSituationIndex];
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+
+    return React.createElement("div", null,
+        React.createElement("div", { className: "page-header", style:{alignItems: 'baseline'} },
+            React.createElement("h1", null, `SRT`),
+            React.createElement("div", { className: "timer" }, `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`)
+        ),
+         React.createElement("div", { className: "test-progress-bar" }, React.createElement("div", { className: "test-progress-bar-inner", style: { width: `${((currentSituationIndex + 1) / activeScenarios.length) * 100}%` } })),
+        React.createElement("div", { className: "card" },
+            React.createElement("div", { className: "oir-question-container" },
+                React.createElement("h3", null, `Situation ${currentSituationIndex + 1}:`),
+                React.createElement("p", { className: 'srt-situation' }, currentSituation)
+            ),
+            React.createElement("textarea", {
+                placeholder: "Write your reaction here...",
+                value: answers[currentSituationIndex] || '',
+                onChange: (e) => handleAnswerChange(currentSituationIndex, e.target.value),
+                style: {minHeight: '150px'}
+            } as any),
+            React.createElement("div", { className: 'oir-controls' },
+                React.createElement("button", { className: "btn btn-secondary", onClick: () => setCurrentSituationIndex(p => Math.max(0, p - 1)), disabled: currentSituationIndex === 0 }, "Previous"),
+                currentSituationIndex < activeScenarios.length - 1
+                    ? React.createElement("button", { className: "btn btn-primary", onClick: () => setCurrentSituationIndex(p => Math.min(activeScenarios.length - 1, p + 1)) }, "Next")
+                    : React.createElement("button", { className: "btn btn-primary", onClick: handleSubmit }, "Finish Test")
+            )
+        )
+    );
+};
 
 const SDTRunner = ({ user, updateUser, unlockBadge, setPage }) => {
     const [responses, setResponses] = useState(user.tests?.sdt?.slice(-1)[0]?.responses || {});
@@ -1049,7 +1369,7 @@ const OIRTestRunner = ({ user, updateUser, unlockBadge, setPage, verbalQuestions
 
     const startTest = (type) => {
         setTestType(type);
-        setQuestions(type === 'verbal' ? verbalQuestions : nonVerbalQuestions);
+        setQuestions(shuffleArray(type === 'verbal' ? verbalQuestions : nonVerbalQuestions));
         setStatus('running');
         setAnswers({});
         setCurrentQuestionIndex(0);
@@ -1137,6 +1457,7 @@ const OIRTestRunner = ({ user, updateUser, unlockBadge, setPage, verbalQuestions
 
 const Lecturerette = ({ user, updateUser, unlockBadge, setPage, topics }) => {
     const [status, setStatus] = useState('idle'); // idle, selecting, prep, speaking, assessing, complete
+    const [randomTopics, setRandomTopics] = useState([]);
     const [selectedTopic, setSelectedTopic] = useState('');
     const [briefing, setBriefing] = useState('');
     const [transcript, setTranscript] = useState('');
@@ -1146,10 +1467,22 @@ const Lecturerette = ({ user, updateUser, unlockBadge, setPage, topics }) => {
     const [feedback, setFeedback] = useState(null);
     const recognitionRef = useRef(null);
 
+    const beginSelection = () => {
+        const { geopolitics, india, general, personal } = topics;
+        const chosenTopics = shuffleArray([
+            geopolitics[Math.floor(Math.random() * geopolitics.length)],
+            india[Math.floor(Math.random() * india.length)],
+            general[Math.floor(Math.random() * general.length)],
+            personal[Math.floor(Math.random() * personal.length)],
+        ]);
+        setRandomTopics(chosenTopics);
+        setStatus('selecting');
+    };
+
     const startPrep = async (topic) => {
         setSelectedTopic(topic);
         setStatus('prep');
-        setTimer(3 * 60); // 3 minutes
+        setTimer(2.5 * 60); // 2.5 minutes
         setIsLoading(true);
         const briefingText = await getTopicBriefing(topic);
         setBriefing(briefingText);
@@ -1218,7 +1551,7 @@ const Lecturerette = ({ user, updateUser, unlockBadge, setPage, topics }) => {
         if ((status === 'prep' || status === 'speaking') && timer > 0) {
             const t = setTimeout(() => setTimer(p => p - 1), 1000);
             return () => clearTimeout(t);
-        } else if (timer === 0) {
+        } else if (timer <= 0 && status !== 'idle' && status !== 'selecting') {
             if (status === 'prep') startSpeech();
             if (status === 'speaking') finishSpeech();
         }
@@ -1232,12 +1565,16 @@ const Lecturerette = ({ user, updateUser, unlockBadge, setPage, topics }) => {
     const renderContent = () => {
         switch(status) {
             case 'idle':
+                return React.createElement("div", { className: 'text-center'},
+                     React.createElement("p", { style: {marginBottom: '1.5rem'} }, "You will be given 4 random topics to choose from. You'll have 2.5 minutes to prepare and 3 minutes to speak."),
+                     React.createElement("button", { className: 'btn btn-primary', onClick: beginSelection }, "Start")
+                );
             case 'selecting':
                 return React.createElement("div", null,
                     React.createElement("h2", { className: 'text-center' }, "Select a Topic"),
-                    React.createElement("p", { className: 'text-center', style: {marginBottom: '1.5rem'} }, "You will get 3 minutes to prepare and 3 minutes to speak."),
+                    React.createElement("p", { className: 'text-center', style: {marginBottom: '1.5rem'} }, "Choose one of the following topics for your talk."),
                     React.createElement("div", { className: 'piq-form-grid' }, 
-                        topics.map(topic => React.createElement("button", { key: topic, className: 'btn btn-secondary', onClick: () => startPrep(topic) }, topic))
+                        randomTopics.map(topic => React.createElement("button", { key: topic, className: 'btn btn-secondary', onClick: () => startPrep(topic) }, topic))
                     )
                 );
             case 'prep':
@@ -1313,19 +1650,44 @@ const PIQForm = ({ user, onSave, setPage }) => {
         React.createElement("h1", { className: "page-header" }, "Personal Information Questionnaire (PIQ)"),
         React.createElement("div", { className: "card piq-form" },
             React.createElement("p", { style: { marginBottom: '1.5rem' } }, "Fill this form accurately. It's used by the AI for your interview."),
-            /* Abridged PIQ form for brevity */
             React.createElement("fieldset", null,
                 React.createElement("legend", null, "Personal Details"),
                 React.createElement("div", { className: 'piq-form-grid' },
                     React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Date of Birth"), React.createElement("input", { type: 'date', value: piqData.personal?.dob || '', onChange: e => handleChange('personal', 'dob', e.target.value) } as any)),
-                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Place of Birth"), React.createElement("input", { type: 'text', placeholder: "City, State", value: piqData.personal?.pob || '', onChange: e => handleChange('personal', 'pob', e.target.value) } as any))
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Place of Birth"), React.createElement("input", { type: 'text', placeholder: "City, State", value: piqData.personal?.pob || '', onChange: e => handleChange('personal', 'pob', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Marital Status"), React.createElement("select", { value: piqData.personal?.marital_status || '', onChange: e => handleChange('personal', 'marital_status', e.target.value) }, React.createElement("option", {value: ""}, "-- Select --"), React.createElement("option", {value: "Single"}, "Single"), React.createElement("option", {value: "Married"}, "Married"))),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Height (cm)"), React.createElement("input", { type: 'number', placeholder: "e.g., 175", value: piqData.personal?.height || '', onChange: e => handleChange('personal', 'height', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Weight (kg)"), React.createElement("input", { type: 'number', placeholder: "e.g., 70", value: piqData.personal?.weight || '', onChange: e => handleChange('personal', 'weight', e.target.value) } as any))
+                )
+            ),
+             React.createElement("fieldset", null,
+                React.createElement("legend", null, "Family Details"),
+                React.createElement("div", { className: 'piq-form-grid' },
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Father's Name"), React.createElement("input", { type: 'text', value: piqData.family?.father_name || '', onChange: e => handleChange('family', 'father_name', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Father's Occupation"), React.createElement("input", { type: 'text', value: piqData.family?.father_occupation || '', onChange: e => handleChange('family', 'father_occupation', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Mother's Name"), React.createElement("input", { type: 'text', value: piqData.family?.mother_name || '', onChange: e => handleChange('family', 'mother_name', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Mother's Occupation"), React.createElement("input", { type: 'text', value: piqData.family?.mother_occupation || '', onChange: e => handleChange('family', 'mother_occupation', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group', style: {gridColumn: '1 / -1'} }, React.createElement("label", null, "Siblings' Details"), React.createElement("textarea", { placeholder: "Number of brothers and sisters, their age, education/occupation.", value: piqData.family?.siblings || '', onChange: e => handleChange('family', 'siblings', e.target.value) } as any))
                 )
             ),
             React.createElement("fieldset", null,
-                React.createElement("legend", null, "Education"),
+                React.createElement("legend", null, "Educational Background"),
                 React.createElement("div", { className: 'piq-form-grid' },
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "10th / Matriculation %"), React.createElement("input", { type: 'number', placeholder: "e.g., 85.5", value: piqData.education?.marks_10 || '', onChange: e => handleChange('education', 'marks_10', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "12th / Intermediate %"), React.createElement("input", { type: 'number', placeholder: "e.g., 82.0", value: piqData.education?.marks_12 || '', onChange: e => handleChange('education', 'marks_12', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Graduation % / CGPA"), React.createElement("input", { type: 'text', placeholder: "e.g., 7.8 or 78", value: piqData.education?.marks_grad || '', onChange: e => handleChange('education', 'marks_grad', e.target.value) } as any)),
                     React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Highest Qualification"), React.createElement("input", { type: 'text', placeholder: "e.g., B.Tech CSE", value: piqData.education?.qualification || '', onChange: e => handleChange('education', 'qualification', e.target.value) } as any)),
-                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Hobbies"), React.createElement("input", { type: 'text', placeholder: "e.g., Reading, Football", value: piqData.education?.hobbies || '', onChange: e => handleChange('education', 'hobbies', e.target.value) } as any))
+                    React.createElement("div", { className: 'form-group', style: {gridColumn: '1 / -1'} }, React.createElement("label", null, "Sports / Games Participation"), React.createElement("textarea", { placeholder: "Mention sport, level of participation (School, College, District, State, National) and any achievements.", value: piqData.education?.sports || '', onChange: e => handleChange('education', 'sports', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group', style: {gridColumn: '1 / -1'} }, React.createElement("label", null, "Hobbies / Interests"), React.createElement("input", { type: 'text', placeholder: "e.g., Reading books, Playing football, Trekking", value: piqData.education?.hobbies || '', onChange: e => handleChange('education', 'hobbies', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group', style: {gridColumn: '1 / -1'} }, React.createElement("label", null, "NCC Experience"), React.createElement("textarea", { placeholder: "Mention Wing, Certificate obtained, and any rank/appointment held.", value: piqData.education?.ncc || '', onChange: e => handleChange('education', 'ncc', e.target.value) } as any))
+                )
+            ),
+             React.createElement("fieldset", null,
+                React.createElement("legend", null, "Employment Details (if any)"),
+                React.createElement("div", { className: 'piq-form-grid' },
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Occupation / Designation"), React.createElement("input", { type: 'text', value: piqData.employment?.designation || '', onChange: e => handleChange('employment', 'designation', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Organization Name"), React.createElement("input", { type: 'text', value: piqData.employment?.organization || '', onChange: e => handleChange('employment', 'organization', e.target.value) } as any)),
+                    React.createElement("div", { className: 'form-group' }, React.createElement("label", null, "Monthly Salary (INR)"), React.createElement("input", { type: 'number', placeholder: "e.g., 50000", value: piqData.employment?.salary || '', onChange: e => handleChange('employment', 'salary', e.target.value) } as any))
                 )
             ),
             React.createElement("button", { onClick: handleSave, className: "btn btn-primary" }, "Save PIQ")
@@ -1484,30 +1846,28 @@ const OLQDashboard = ({ user }) => {
 };
 
 const CurrentAffairs = () => {
-    const [news, setNews] = useState({});
-    const [loading, setLoading] = useState({});
-    const topics = ["National Security", "Indo-Pacific Region", "Defence Technology", "International Relations"];
+    const [news, setNews] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const fetchNews = useCallback(async (topic) => {
-        setLoading(prev => ({ ...prev, [topic]: true }));
-        const update = await getNewsUpdate(topic);
-        setNews(prev => ({ ...prev, [topic]: update }));
-        setLoading(prev => ({ ...prev, [topic]: false }));
+    const fetchNews = useCallback(async () => {
+        setLoading(true);
+        const update = await getNewsUpdate();
+        setNews(update);
+        setLoading(false);
     }, []);
 
     useEffect(() => {
-        fetchNews("General");
+        fetchNews();
     }, [fetchNews]);
 
     return React.createElement("div", null,
         React.createElement("h1", { className: "page-header" }, "Current Affairs Briefing"),
-        React.createElement("div", { className: 'news-grid' },
-            /* General news card, etc. */
-            topics.map(topic => React.createElement("div", { key: topic, className: 'card news-card' },
-                React.createElement("h3", null, topic),
-                loading[topic] ? React.createElement(LoadingSpinner, {}) : React.createElement("p", null, news[topic] || "Click to load latest updates."),
-                React.createElement("button", { className: 'btn btn-secondary', onClick: () => fetchNews(topic) }, "Refresh")
-            ))
+        React.createElement("div", { className: 'card news-card current-affairs-general' },
+            React.createElement("div", { className: 'header-actions', style: { marginBottom: '1rem' } },
+                React.createElement("h3", { style: { flexGrow: 1 } }, "Latest National & International Briefing"),
+                React.createElement("button", { className: 'btn btn-secondary', onClick: fetchNews, disabled: loading }, "Refresh News")
+            ),
+            loading ? React.createElement(LoadingSpinner, {}) : React.createElement("div", { className: 'general-news-content' }, news || "Click to load latest updates.")
         )
     );
 };
@@ -1678,6 +2038,13 @@ const App = () => {
     if (!data) return React.createElement("div", { className: "app-loading-screen" }, React.createElement(LoadingSpinner, {}), React.createElement("h2", null, "Loading NOX SSB Prep..."));
     if (!currentUser) return React.createElement(LoginScreen, { onLogin: login, onSignup: signup, error: error });
 
+    const lectureretteTopics = {
+        geopolitics: data.content.lecturerette_topics_geopolitics,
+        india: data.content.lecturerette_topics_india,
+        general: data.content.lecturerette_topics_general,
+        personal: data.content.lecturerette_topics_personal,
+    };
+
     const PageComponent = {
         'dashboard': () => React.createElement(Dashboard, { user: currentUser, setPage: setCurrentPage }),
         'tat': () => React.createElement(TATRunner, { user: currentUser, updateUser, unlockBadge, images: data.content.tat_images, setPage: setCurrentPage }),
@@ -1685,7 +2052,7 @@ const App = () => {
         'srt': () => React.createElement(SRTRunner, { user: currentUser, updateUser, unlockBadge, scenarios: data.content.srt_scenarios, setPage: setCurrentPage }),
         'sdt': () => React.createElement(SDTRunner, { user: currentUser, updateUser, unlockBadge, setPage: setCurrentPage }),
         'oir': () => React.createElement(OIRTestRunner, { user: currentUser, updateUser, unlockBadge, verbalQuestions: data.content.oir_verbal_questions, nonVerbalQuestions: data.content.oir_non_verbal_questions, setPage: setCurrentPage }),
-        'lecturerette': () => React.createElement(Lecturerette, { user: currentUser, updateUser, unlockBadge, topics: data.content.lecturerette_topics, setPage: setCurrentPage }),
+        'lecturerette': () => React.createElement(Lecturerette, { user: currentUser, updateUser, unlockBadge, topics: lectureretteTopics, setPage: setCurrentPage }),
         'gpe': () => React.createElement(GPERunner, { user: currentUser, updateUser, unlockBadge, scenario: data.content.gpe_scenarios?.[0], setPage: setCurrentPage }),
         'ai_interview': () => React.createElement(AIInterviewSimulator, { user: currentUser, updateUser, unlockBadge, setPage: setCurrentPage }),
         'piq': () => React.createElement(PIQForm, { user: currentUser, onSave: updateUser, setPage: setCurrentPage }),
@@ -1736,6 +2103,7 @@ const LoginScreen = ({ onLogin, onSignup, error }) => {
             React.createElement("form", { onSubmit: handleSubmit },
                 React.createElement("div", { className: "form-group" },
                     React.createElement("label", { htmlFor: "rollNo" }, "Roll No"),
+// Fix: Added `as any` to the props object to resolve a TypeScript error where `value` was not a recognized property. This is a common workaround for type definition issues.
                     React.createElement("input", { type: "text", id: "rollNo", value: rollNo, onChange: (e) => setRollNo(e.target.value), required: true } as any)
                 ),
                 !isLogin && React.createElement("div", { className: "form-group" },
