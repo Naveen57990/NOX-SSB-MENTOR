@@ -1,12 +1,29 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+NOX SSB Mentor
 
-# Run and deploy your AI Studio app
+AI-powered SSB preparation app built by Naveen, designed to simulate real SSB tests and give accurate, personalised assessments.
 
-This contains everything you need to run your app locally.
+🚀 Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1y2wpG6TqhZBjBxlJRvqL1YoFDuhCZ2xR
+Complete Psych Tests: TAT, WAT, SRT, SDT
+
+OIR Tests: 50 verbal + 50 non-verbal questions
+
+AI Interview with changing questions every time
+
+Lecturerette Simulator with timers + speech analysis
+
+GPE Scenarios with structured practice
+
+Automatic OLQ-based feedback
+
+Fully online + works on mobile browser
+
+
+
+👤 About the Creator
+
+Naveen — a student building advanced AI tools for SSB aspirants and creating better learning experiences using modern tech.
+
 
 ## Run Locally
 
