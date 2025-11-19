@@ -35,3 +35,8 @@ Naveen — a student building advanced AI tools for SSB aspirants and creating b
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+
+
+
+for direct access==>https://nox-ssb-mentor.vercel.app/
